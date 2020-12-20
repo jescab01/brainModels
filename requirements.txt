@@ -1,0 +1,13 @@
+tvb-library~=2.0.9
+plotly~=4.6.0
+mne~=0.20.0
+numpy~=1.18.2
+matplotlib~=3.2.1
+scipy~=1.4.1
+pandas~=1.0.3
+unidip~=0.1.1
+
+
+# Check version:  pip freeze | findstr plotly
+# install tvb-data manually from https://zenodo.org/record/3688773#.Xqaa9ZnRYaE :
+#       download and copy tvb_data folder to venv/Lib/site-packages
