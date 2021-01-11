@@ -16,8 +16,9 @@ from toolbox import timeseriesPlot, FFTplot, FFTpeaks, AEC, PLV, PLI, epochingTo
 # This simulation will generate FC for a virtual "Subject".
 # Define identifier (i.e. could be 0,1,11,12,...)
 subjectid = ".1995JansenRit"
-main_folder="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\"+subjectid
-ctb_folder="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"
+wd=os.getcwd()
+main_folder=wd+"\\"+subjectid
+ctb_folder=wd+"\\CTB_data\\output\\"
 if subjectid not in os.listdir(ctb_folder):
     os.mkdir(ctb_folder+subjectid)
     os.mkdir(main_folder)
@@ -31,16 +32,16 @@ emp_subj = "subj04"
 
 tic0=time.time()
 
-simLength = 4100 # ms - relatively long simulation to be able to check for power distribution
+simLength = 5000 # ms - relatively long simulation to be able to check for power distribution
 samplingFreq = 1000 #Hz
-transient=100 # ms to exclude from timeseries due to initial transient
+transient=1000 # ms to exclude from timeseries due to initial transient
 
 m = models.JansenRit(A=np.array([3.25]), B=np.array([22]), J=np.array([1]),
 
-                     a=np.array([100]), a_1=np.array([135]), a_2=np.array([108]),
-                     a_3=np.array([33.75]), a_4=np.array([33.75]), b=np.array([50]),
+                     a=np.array([0.1]), a_1=np.array([135]), a_2=np.array([108]),
+                     a_3=np.array([33.75]), a_4=np.array([33.75]), b=np.array([0.05]),
 
-                     mu=np.array([120]), nu_max=np.array([2.5]), p_max=np.array([125]), p_min=np.array([115]),
+                     mu=np.array([0.09]), nu_max=np.array([0.0025]), p_max=np.array([0.15]), p_min=np.array([0.3]),
 
                      r=np.array([0.56]), v0=np.array([6]))
 
@@ -49,10 +50,12 @@ m = models.JansenRit(A=np.array([3.25]), B=np.array([22]), J=np.array([1]),
 # integrator = integrators.HeunStochastic(dt=1000/samplingFreq, noise=noise.Additive(nsig=np.array([5e-6])))
 integrator = integrators.HeunDeterministic(dt=1000/samplingFreq)
 
-conn = connectivity.Connectivity.from_file(
-    "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\CTB_connx66_"+emp_subj+".zip")
+conn = connectivity.Connectivity.from_file(ctb_folder+"CTB_connx66_"+emp_subj+".zip")
 conn.weights = conn.scaled_weights(mode="tract")
-coup = coupling.SigmoidalJansenRit(cmax=np.array([2.5]), a=np.array([0.56]), midpoint=np.array([6]))
+
+# Coupling function
+coup = coupling.SigmoidalJansenRit(a=np.array([28]), cmax=np.array([0.005]),  midpoint=np.array([6]), r=np.array([0.56]))
+conn.speed=np.array([6])
 
 mon = (monitors.Raw(),)
 
@@ -63,8 +66,8 @@ sim.configure()
 output = sim.run(simulation_length=simLength)
 print("Simulation time: %0.2f sec" % (time.time() - tic0,))
 # Extract data cutting initial transient
-raw_data = output[0][1][:, 0, :, 0].T
-raw_time = output[0][0][:]
+raw_data = output[0][1][transient:, 0, :, 0].T
+raw_time = output[0][0][transient:]
 regionLabels = conn.region_labels
 regionLabels=list(regionLabels)
 regionLabels.insert(0,"AVG")
@@ -75,7 +78,7 @@ data = np.concatenate((data, raw_data), axis=0)  # concatenate mean signal: data
 
 # Check initial transient and cut data
 timeseriesPlot(data, raw_time, regionLabels, main_folder)
-exit("done!")
+
 # Fourier Analysis plot
 FFTplot(data, simLength, regionLabels, main_folder)
 
@@ -122,7 +125,7 @@ for b in range(len(bands[0])):
     #CONNECTIVITY MEASURES
     ## PLV
     plv = PLV(efPhase)
-    fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"plv.txt"
+    fname = ctb_folder+subjectid+"\\"+bands[0][b]+"plv.txt"
     np.savetxt(fname, plv)
 
     ## dPLV
@@ -130,26 +133,20 @@ for b in range(len(bands[0])):
 
     ## AEC
     aec = AEC(efEnvelope)
-    fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"corramp.txt"
+    fname = ctb_folder+subjectid+"\\"+bands[0][b]+"corramp.txt"
     np.savetxt(fname, aec)
 
     ## PLI
     pli = PLI(efPhase)
-    fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"pli.txt"
+    fname = ctb_folder+subjectid+"\\"+bands[0][b]+"pli.txt"
     np.savetxt(fname, pli)
 
 
     # Load empirical data to make simple comparisons
-    plv_emp = np.loadtxt(
-        "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\FC_" + emp_subj + "\\" + bands[0][
-            b] + "plv.txt")
-    aec_emp = np.loadtxt(
-        "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\FC_" + emp_subj + "\\" + bands[0][
-            b] + "corramp.txt")
+    plv_emp = np.loadtxt(ctb_folder+"FC_" + emp_subj + "\\" + bands[0][b] + "plv.txt")
+    aec_emp = np.loadtxt(ctb_folder+"FC_" + emp_subj + "\\" + bands[0][b] + "corramp.txt")
 
-    pli_emp = np.loadtxt(
-        "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\FC_" + emp_subj + "\\" + bands[0][
-            b] + "pli.txt")
+    pli_emp = np.loadtxt(ctb_folder+"FC_" + emp_subj + "\\" + bands[0][b] + "pli.txt")
 
     # Comparisons
     t1 = np.zeros(shape=(2, 2145))
@@ -177,7 +174,7 @@ fc_result = pd.DataFrame([fc_result], columns=["plvD_r", "pliD_r", "aecD_r", "pl
 
 # Copy structural connetivity weights in FC folder
 weights = conn.weights
-fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\weights.txt"
+fname = ctb_folder+subjectid+"\\weights.txt"
 np.savetxt(fname, weights)
 
 del i, highcut, lowcut, t1, t3, filterSignals, efPhase,
@@ -207,8 +204,8 @@ print("Calculating FC correlations BETWEEN subjects", end="")
 for i1, s1 in enumerate(subjects):
     print("Calculating FC correlations BETWEEN subjects - subject %i/%i" % (i1 + 1, len(subjects)), end="\r")
     for i2, s2 in enumerate(subjects):
-      s1dir="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+s1+"\\"
-      s2dir="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+s2+"\\"
+      s1dir=ctb_folder+s1+"\\"
+      s2dir=ctb_folder+s2+"\\"
 
       for b in range(len(bands[0])):
          s1bdir = s1dir + bands[0][b]
@@ -246,7 +243,7 @@ print("Calculating structural - functional correlations WITHIN subjects (PLV and
 for i, name in enumerate(subjects):
     print("Calculating structural - functional correlations WITHIN subjects - subject %i/%i"
           % (i + 1, len(subjects)), end="\r")
-    sdir="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+name+"\\"
+    sdir=ctb_folder+name+"\\"
     for b in range(len(bands[0])):
       AEC = np.loadtxt(sdir+bands[0][b]+"corramp.txt")
       PLV = np.loadtxt(sdir+bands[0][b]+"plv.txt")

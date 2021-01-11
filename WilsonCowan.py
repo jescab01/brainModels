@@ -16,8 +16,9 @@ from toolbox import timeseriesPlot, FFTplot, FFTpeaks, AEC, PLV, PLI, epochingTo
 # This simulation will generate FC for a virtual "Subject".
 # Define identifier (i.e. could be 0,1,11,12,...)
 subjectid = ".1973WilsonCowan"
-main_folder="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\"+subjectid
-ctb_folder="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"
+wd=os.getcwd()
+main_folder=wd+"\\"+subjectid
+ctb_folder=wd+"\\CTB_data\\output\\"
 if subjectid not in os.listdir(ctb_folder):
     os.mkdir(ctb_folder+subjectid)
     os.mkdir(main_folder)
@@ -37,23 +38,24 @@ transient=100 # ms to exclude from timeseries due to initial transient
 
 m = models.WilsonCowan(P=np.array([0.31]),
 
-                   c_ee=np.array([3.25]), c_ei=np.array([2.5]), c_ie=np.array([3.75]), c_ii=np.array([0]),
-                   alpha_e=np.array([1]), alpha_i=np.array([1]),
+                   c_ee = np.array([3.25]), c_ei=np.array([2.5]), c_ie=np.array([3.75]), c_ii=np.array([0]),
+                   alpha_e = np.array([1]), alpha_i=np.array([1]),
 
-                   r_e=np.array([0]), r_i=np.array([0]), k_e=np.array([1]), k_i=np.array([1]),
-                   tau_e=np.array([100]), tau_i=np.array([50]), theta_e=np.array([0]), theta_i=np.array([0]),
+                   r_e = np.array([0]), r_i=np.array([0]), k_e=np.array([1]), k_i=np.array([1]),
+                   tau_e = np.array([100]), tau_i=np.array([50]), theta_e=np.array([0]), theta_i=np.array([0]),
 
-                   a_e=np.array([0.25]), a_i=np.array([0.25]), b_e=np.array([1]), b_i=np.array([1]),
-                   c_e=np.array([1]), c_i=np.array([1]))
+                   a_e = np.array([0.25]), a_i=np.array([0.25]), b_e=np.array([1]), b_i=np.array([1]),
+                   c_e = np.array([1]), c_i=np.array([1]))
 
 # integrator: dt=T(ms)=1000/samplingFreq(kHz)=1/samplingFreq(HZ)
 # integrator = integrators.HeunStochastic(dt=1000/samplingFreq, noise=noise.Additive(nsig=np.array([5e-6])))
 integrator = integrators.HeunDeterministic(dt=1000/samplingFreq)
 
-conn = connectivity.Connectivity.from_file(
-    "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\CTB_connx66_"+emp_subj+".zip")
+conn = connectivity.Connectivity.from_file(ctb_folder+"CTB_connx66_"+emp_subj+".zip")
 conn.weights = conn.scaled_weights(mode="tract")
+
 coup = coupling.Linear(a=np.array([2]))
+conn.speed = np.array([0.1])
 
 mon = (monitors.Raw(),)
 
@@ -67,8 +69,8 @@ print("Simulation time: %0.2f sec" % (time.time() - tic0,))
 raw_data = output[0][1][transient:, 0, :, 0].T
 raw_time = output[0][0][transient:]
 regionLabels = conn.region_labels
-regionLabels=list(regionLabels)
-regionLabels.insert(0,"AVG")
+regionLabels = list(regionLabels)
+regionLabels.insert(0, "AVG")
 
 # average signals to obtain mean signal frequency peak
 data = np.asarray([np.average(raw_data, axis=0)])
@@ -124,7 +126,7 @@ for b in range(len(bands[0])):
     #CONNECTIVITY MEASURES
     ## PLV
     plv = PLV(efPhase)
-    fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"plv.txt"
+    fname = ctb_folder+subjectid+"\\"+bands[0][b]+"plv.txt"
     np.savetxt(fname, plv)
 
     ## dPLV
@@ -132,26 +134,20 @@ for b in range(len(bands[0])):
 
     ## AEC
     aec = AEC(efEnvelope)
-    fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"corramp.txt"
+    fname = ctb_folder+subjectid+"\\"+bands[0][b]+"corramp.txt"
     np.savetxt(fname, aec)
 
     ## PLI
     pli = PLI(efPhase)
-    fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"pli.txt"
+    fname = ctb_folder+subjectid+"\\"+bands[0][b]+"pli.txt"
     np.savetxt(fname, pli)
 
 
     # Load empirical data to make simple comparisons
-    plv_emp = np.loadtxt(
-        "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\FC_" + emp_subj + "\\" + bands[0][
-            b] + "plv.txt")
-    aec_emp = np.loadtxt(
-        "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\FC_" + emp_subj + "\\" + bands[0][
-            b] + "corramp.txt")
+    plv_emp = np.loadtxt(ctb_folder+"FC_" + emp_subj + "\\" + bands[0][b] + "plv.txt")
+    aec_emp = np.loadtxt(ctb_folder+"FC_" + emp_subj + "\\" + bands[0][b] + "corramp.txt")
 
-    pli_emp = np.loadtxt(
-        "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\FC_" + emp_subj + "\\" + bands[0][
-            b] + "pli.txt")
+    pli_emp = np.loadtxt(ctb_folder+"FC_" + emp_subj + "\\" + bands[0][b] + "pli.txt")
 
     # Comparisons
     t1 = np.zeros(shape=(2, 2145))
@@ -179,7 +175,7 @@ fc_result = pd.DataFrame([fc_result], columns=["plvD_r", "pliD_r", "aecD_r", "pl
 
 # Copy structural connetivity weights in FC folder
 weights = conn.weights
-fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\weights.txt"
+fname = ctb_folder+subjectid+"\\weights.txt"
 np.savetxt(fname, weights)
 
 del i, highcut, lowcut, t1, t3, filterSignals, efPhase,
@@ -209,8 +205,8 @@ print("Calculating FC correlations BETWEEN subjects", end="")
 for i1, s1 in enumerate(subjects):
     print("Calculating FC correlations BETWEEN subjects - subject %i/%i" % (i1 + 1, len(subjects)), end="\r")
     for i2, s2 in enumerate(subjects):
-      s1dir="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+s1+"\\"
-      s2dir="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+s2+"\\"
+      s1dir=ctb_folder+s1+"\\"
+      s2dir=ctb_folder+s2+"\\"
 
       for b in range(len(bands[0])):
          s1bdir = s1dir + bands[0][b]
@@ -248,7 +244,7 @@ print("Calculating structural - functional correlations WITHIN subjects (PLV and
 for i, name in enumerate(subjects):
     print("Calculating structural - functional correlations WITHIN subjects - subject %i/%i"
           % (i + 1, len(subjects)), end="\r")
-    sdir="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+name+"\\"
+    sdir=ctb_folder+name+"\\"
     for b in range(len(bands[0])):
       AEC = np.loadtxt(sdir+bands[0][b]+"corramp.txt")
       PLV = np.loadtxt(sdir+bands[0][b]+"plv.txt")

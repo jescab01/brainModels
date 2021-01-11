@@ -15,9 +15,10 @@ from toolbox import timeseriesPlot, FFTplot, FFTpeaks, AEC, PLV, PLI, epochingTo
 
 # This simulation will generate FC for a virtual "Subject".
 # Define identifier (i.e. could be 0,1,11,12,...)
-subjectid = ".2001LarterBreakspear"
-main_folder="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\"+subjectid
-ctb_folder="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"
+subjectid = ".2006WongWang"
+wd=os.getcwd()
+main_folder=wd+"\\"+subjectid
+ctb_folder=wd+"\\CTB_data\\output\\"
 if subjectid not in os.listdir(ctb_folder):
     os.mkdir(ctb_folder+subjectid)
     os.mkdir(main_folder)
@@ -35,17 +36,29 @@ simLength = 4100 # ms - relatively long simulation to be able to check for power
 samplingFreq = 1000 #Hz
 transient=100 # ms to exclude from timeseries due to initial transient
 
-m = models.ReducedWongWang(I_o=np.array([0.33]), J_N=np.array([0.2609]),
-                           a=np.array([0.27]), b=np.array([0.108]), d=np.array([154]),
-                           gamma=np.array([0.641]), sigma_noise=np.array([0.000000001]),
-                           tau_s=np.array([100]), w=np.array([0.6]))
+# m = models.ReducedWongWang(I_o=np.array([0.33]), J_N=np.array([0.2609]),
+#                            a=np.array([0.27]), b=np.array([0.108]), d=np.array([154]),
+#                            gamma=np.array([0.641]), sigma_noise=np.array([0.000000001]),
+#                            tau_s=np.array([100]), w=np.array([0.6]))
+
+m = models.ReducedWongWangExcInh(G=np.array([2]), I_o=np.array([0.382]),
+                                 J_N=np.array([0.15]), J_i=np.array([1]),
+                                 W_e=np.array([1]), W_i=np.array([0.7]),
+                                 a_e=np.array([310]), a_i=np.array([615]),
+                                 b_e=np.array([125]), b_i=np.array([177]),
+                                 d_e=np.array([0.16]), d_i=np.array([0.087]),
+                                 gamma_e=np.array([0.000641]), gamma_i=np.array([0.001]),
+                                 lamda=np.array([0]),
+                                 tau_e=np.array([100]), tau_i=np.array([10]),
+                                 w_p=np.array([1.4]))
+
 
 # integrator: dt=T(ms)=1000/samplingFreq(kHz)=1/samplingFreq(HZ)
 # integrator = integrators.HeunStochastic(dt=1000/samplingFreq, noise=noise.Additive(nsig=np.array([5e-6])))
 integrator = integrators.HeunDeterministic(dt=1000/samplingFreq)
 
-conn = connectivity.Connectivity.from_file(
-    "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\CTB_connx66_"+emp_subj+".zip")
+
+conn = connectivity.Connectivity.from_file(ctb_folder+"CTB_connx66_"+emp_subj+".zip")
 conn.weights = conn.scaled_weights(mode="tract")
 coup = coupling.Linear(a=np.array([2]))
 
@@ -118,7 +131,7 @@ for b in range(len(bands[0])):
     #CONNECTIVITY MEASURES
     ## PLV
     plv = PLV(efPhase)
-    fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"plv.txt"
+    fname = ctb_folder+subjectid+"\\"+bands[0][b]+"plv.txt"
     np.savetxt(fname, plv)
 
     ## dPLV
@@ -126,26 +139,20 @@ for b in range(len(bands[0])):
 
     ## AEC
     aec = AEC(efEnvelope)
-    fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"corramp.txt"
+    fname = ctb_folder+subjectid+"\\"+bands[0][b]+"corramp.txt"
     np.savetxt(fname, aec)
 
     ## PLI
     pli = PLI(efPhase)
-    fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"pli.txt"
+    fname = ctb_folder+subjectid+"\\"+bands[0][b]+"pli.txt"
     np.savetxt(fname, pli)
 
 
     # Load empirical data to make simple comparisons
-    plv_emp = np.loadtxt(
-        "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\FC_" + emp_subj + "\\" + bands[0][
-            b] + "plv.txt")
-    aec_emp = np.loadtxt(
-        "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\FC_" + emp_subj + "\\" + bands[0][
-            b] + "corramp.txt")
+    plv_emp = np.loadtxt(ctb_folder+"FC_" + emp_subj + "\\" + bands[0][b] + "plv.txt")
+    aec_emp = np.loadtxt(ctb_folder+"FC_" + emp_subj + "\\" + bands[0][b] + "corramp.txt")
 
-    pli_emp = np.loadtxt(
-        "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\FC_" + emp_subj + "\\" + bands[0][
-            b] + "pli.txt")
+    pli_emp = np.loadtxt(ctb_folder+"FC_" + emp_subj + "\\" + bands[0][b] + "pli.txt")
 
     # Comparisons
     t1 = np.zeros(shape=(2, 2145))
@@ -173,7 +180,7 @@ fc_result = pd.DataFrame([fc_result], columns=["plvD_r", "pliD_r", "aecD_r", "pl
 
 # Copy structural connetivity weights in FC folder
 weights = conn.weights
-fname = "C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+subjectid+"\\weights.txt"
+fname = ctb_folder+subjectid+"\\weights.txt"
 np.savetxt(fname, weights)
 
 del i, highcut, lowcut, t1, t3, filterSignals, efPhase,
@@ -203,8 +210,8 @@ print("Calculating FC correlations BETWEEN subjects", end="")
 for i1, s1 in enumerate(subjects):
     print("Calculating FC correlations BETWEEN subjects - subject %i/%i" % (i1 + 1, len(subjects)), end="\r")
     for i2, s2 in enumerate(subjects):
-      s1dir="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+s1+"\\"
-      s2dir="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+s2+"\\"
+      s1dir=ctb_folder+s1+"\\"
+      s2dir=ctb_folder+s2+"\\"
 
       for b in range(len(bands[0])):
          s1bdir = s1dir + bands[0][b]
@@ -242,7 +249,7 @@ print("Calculating structural - functional correlations WITHIN subjects (PLV and
 for i, name in enumerate(subjects):
     print("Calculating structural - functional correlations WITHIN subjects - subject %i/%i"
           % (i + 1, len(subjects)), end="\r")
-    sdir="C:\\Users\\F_r_e\\PycharmProjects\\brainModels\\CTB_data\\output\\"+name+"\\"
+    sdir=ctb_folder+name+"\\"
     for b in range(len(bands[0])):
       AEC = np.loadtxt(sdir+bands[0][b]+"corramp.txt")
       PLV = np.loadtxt(sdir+bands[0][b]+"plv.txt")
