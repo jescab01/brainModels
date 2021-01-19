@@ -8,6 +8,7 @@ import pandas as pd
 import scipy.stats
 
 from tvb.simulator.lab import *
+from tvb.simulator.plot.phase_plane_interactive import PhasePlaneInteractive
 from mne import time_frequency, filter
 import plotly.graph_objects as go  # for data visualisation
 import plotly.io as pio
@@ -41,21 +42,21 @@ transient=100 # ms to exclude from timeseries due to initial transient
 #                            gamma=np.array([0.641]), sigma_noise=np.array([0.000000001]),
 #                            tau_s=np.array([100]), w=np.array([0.6]))
 
-m = models.ReducedWongWangExcInh(G=np.array([2]), I_o=np.array([0.382]),
+m = models.ReducedWongWangExcInh(G=np.array([0]), I_o=np.array([0.5]),
                                  J_N=np.array([0.15]), J_i=np.array([1]),
                                  W_e=np.array([1]), W_i=np.array([0.7]),
-                                 a_e=np.array([310]), a_i=np.array([615]),
-                                 b_e=np.array([125]), b_i=np.array([177]),
-                                 d_e=np.array([0.16]), d_i=np.array([0.087]),
-                                 gamma_e=np.array([0.000641]), gamma_i=np.array([0.001]),
+                                 a_e=np.array([0.310]), a_i=np.array([0.615]),
+                                 b_e=np.array([0.125]), b_i=np.array([0.177]),
+                                 d_e=np.array([160]), d_i=np.array([87]),
+                                 gamma_e=np.array([0.641]), gamma_i=np.array([1]),
                                  lamda=np.array([0]),
                                  tau_e=np.array([100]), tau_i=np.array([10]),
                                  w_p=np.array([1.4]))
-
-
 # integrator: dt=T(ms)=1000/samplingFreq(kHz)=1/samplingFreq(HZ)
-# integrator = integrators.HeunStochastic(dt=1000/samplingFreq, noise=noise.Additive(nsig=np.array([5e-6])))
-integrator = integrators.HeunDeterministic(dt=1000/samplingFreq)
+# integrator = integrators.HeunStochastic(dt=1, noise=noise.Additive(nsig=np.array([0.01])))
+integrator = integrators.HeunDeterministic(dt=1)
+# ppi_fig = PhasePlaneInteractive(model=m, integrator=integrator)
+# ppi_fig.show()
 
 
 conn = connectivity.Connectivity.from_file(ctb_folder+"CTB_connx66_"+emp_subj+".zip")
@@ -81,13 +82,14 @@ regionLabels.insert(0,"AVG")
 data = np.asarray([np.average(raw_data, axis=0)])
 data = np.concatenate((data, raw_data), axis=0)  # concatenate mean signal: data[0]; with raw_data: data[1:end]
 
-# Check initial transient and cut data
-timeseriesPlot(data, raw_time, regionLabels, main_folder, True)
-
+# # Check initial transient and cut data
+# t="W_I="+str(wi)+"  |  J_N="+str(jn)+"  |  I_o="+str(io)
+timeseriesPlot(data[1:5], raw_time, regionLabels[1:], main_folder)#, title=t, mode="png")
+# # Inihibitory subpopulation
+raw_Si = output[0][1][:, 1, :, 0].T
+timeseriesPlot(raw_Si[0:4], raw_time, regionLabels[1:], main_folder)#, title=t, mode="png")
 # Fourier Analysis plot
-FFTplot(data, simLength, regionLabels, main_folder)
-
-fft_peaks = FFTpeaks(data, simLength - transient)[:, 0]
+# FFTplot(data[1:5], simLength, regionLabels[1:], main_folder,  mode="html")
 
 
 

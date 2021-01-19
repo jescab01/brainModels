@@ -12,14 +12,16 @@ import math
 import time
 
 
-def timeseriesPlot(signals, timepoints, regionLabels, folder="figures", inline=False):
-    fig = go.Figure(layout=dict(xaxis=dict(title='time (ms)'), yaxis=dict(title='Voltage')))
+def timeseriesPlot(signals, timepoints, regionLabels, folder="figures", title=None, mode="html"):
+    fig = go.Figure(layout=dict(title=title, xaxis=dict(title='time (ms)'), yaxis=dict(title='Voltage')))
     for ch in range(len(signals)):
         fig.add_scatter(x=timepoints, y=signals[ch], name=regionLabels[ch])
 
-    if inline==False:
+    if mode=="html":
         pio.write_html(fig, file=folder+"/TimeSeries.html", auto_open=True)
-    else:
+    elif mode=="png":
+        pio.write_image(fig, file=folder+"/TimeSeries_"+str(time.time())+".png", engine="kaleido")
+    elif mode=="inline":
         plotly.offline.iplot(fig)
 
 def epochingTool(signals, epoch_length, samplingFreq, msg=""):
@@ -41,8 +43,8 @@ def epochingTool(signals, epoch_length, samplingFreq, msg=""):
     return epochedSignals
 
 
-def FFTplot(signals, simLength, regionLabels, folder="figures", inline=False):
-    fig = go.Figure(layout=dict(xaxis=dict(title='Frequency'), yaxis=dict(title='Module')))
+def FFTplot(signals, simLength, regionLabels, folder="figures", title=None, mode="html"):
+    fig = go.Figure(layout=dict(title=title, xaxis=dict(title='Frequency'), yaxis=dict(title='Module')))
     for i in range(len(signals)):
         fft = abs(np.fft.fft(signals[i]))  # FFT for each channel signal
         fft = fft[range(int(len(signals[0]) / 2))]  # Select just positive side of the symmetric FFT
@@ -51,11 +53,13 @@ def FFTplot(signals, simLength, regionLabels, folder="figures", inline=False):
 
         cut = (simLength/2) / 500 * 80#Hz. Number of frequency points until cut at xHz point
 
-        fig.add_scatter(x=freqs[:int(cut)], y=fft[:int(cut)], name=regionLabels[i])
+        fig.add_scatter(x=freqs[:int(cut)], y=fft[:int(cut)], name=regionLabels[i], )
 
-    if inline==False:
+    if mode=="html":
         pio.write_html(fig, file=folder+"/FFT.html", auto_open=True)
-    else:
+    elif mode=="png":
+        pio.write_image(fig, file=folder+"/FFT_"+str(time.time())+".png", engine="kaleido")
+    elif mode=="inline":
         plotly.offline.iplot(fig)
 
 def FFTpeaks(signals, simLength):
@@ -65,6 +69,7 @@ def FFTpeaks(signals, simLength):
 
     else:
         peaks = list()
+        modules = list()
         for i in range(len(signals)):
             fft = abs(np.fft.fft(signals[i]))  # FFT for each channel signal
             fft = fft[range(np.int(len(signals[i]) / 2))]  # Select just positive side of the symmetric FFT
@@ -74,9 +79,10 @@ def FFTpeaks(signals, simLength):
             fft=fft[freqs>0.5] # remove undesired frequencies from peak analisis
             freqs=freqs[freqs>0.5]
 
+            modules.append(fft[np.where(fft == max(fft))])
             peaks.append(freqs[np.where(fft == max(fft))])
 
-    return np.asarray(peaks)
+    return np.asarray(peaks), np.asarray(modules)
 
 
 def bandpassFIRfilter(signals, lowcut, highcut, windowtype, samplingRate, times=None, plot="OFF"):

@@ -36,16 +36,18 @@ simLength = 4100 # ms - relatively long simulation to be able to check for power
 samplingFreq = 1000 #Hz
 transient=100 # ms to exclude from timeseries due to initial transient
 
-m = models.WilsonCowan(P=np.array([0.31]),
+m = models.WilsonCowan(P=np.array([0.31]), Q=np.array([0]),
+                       a_e=np.array([4]), a_i=np.array([4]),
+                       alpha_e=np.array([1]), alpha_i=np.array([1]),
+                       b_e=np.array([1]), b_i=np.array([1]),
+                       c_e=np.array([1]), c_ee=np.array([3.25]), c_ei=np.array([2.5]),
+                       c_i=np.array([1]), c_ie=np.array([3.75]), c_ii=np.array([0]),
+                       k_e=np.array([1]), k_i=np.array([1]),
+                       r_e=np.array([0]), r_i=np.array([0]),
+                       tau_e=np.array([10]), tau_i=np.array([20]),
+                       theta_e=np.array([0]), theta_i=np.array([0]))
 
-                   c_ee = np.array([3.25]), c_ei=np.array([2.5]), c_ie=np.array([3.75]), c_ii=np.array([0]),
-                   alpha_e = np.array([1]), alpha_i=np.array([1]),
 
-                   r_e = np.array([0]), r_i=np.array([0]), k_e=np.array([1]), k_i=np.array([1]),
-                   tau_e = np.array([100]), tau_i=np.array([50]), theta_e=np.array([0]), theta_i=np.array([0]),
-
-                   a_e = np.array([0.25]), a_i=np.array([0.25]), b_e=np.array([1]), b_i=np.array([1]),
-                   c_e = np.array([1]), c_i=np.array([1]))
 
 # integrator: dt=T(ms)=1000/samplingFreq(kHz)=1/samplingFreq(HZ)
 # integrator = integrators.HeunStochastic(dt=1000/samplingFreq, noise=noise.Additive(nsig=np.array([5e-6])))

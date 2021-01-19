@@ -47,7 +47,7 @@ integrator = integrators.HeunDeterministic(dt=1000/samplingFreq)
 
 conn = connectivity.Connectivity.from_file(ctb_folder+"CTB_connx66_"+emp_subj+".zip")
 conn.weights = conn.scaled_weights(mode="tract")
-coup = coupling.Linear(a=np.array([2]))
+coup = coupling.Linear(a=np.array([0.02]))
 
 mon = (monitors.Raw(),)
 
