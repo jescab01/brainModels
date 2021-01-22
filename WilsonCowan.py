@@ -57,7 +57,7 @@ conn = connectivity.Connectivity.from_file(ctb_folder+"CTB_connx66_"+emp_subj+".
 conn.weights = conn.scaled_weights(mode="tract")
 
 coup = coupling.Linear(a=np.array([2]))
-conn.speed = np.array([0.1])
+conn.speed = np.array([3])
 
 mon = (monitors.Raw(),)
 
@@ -84,7 +84,7 @@ timeseriesPlot(data, raw_time, regionLabels, main_folder, True)
 # Fourier Analysis plot
 FFTplot(data, simLength, regionLabels, main_folder)
 
-fft_peaks = FFTpeaks(data, simLength - transient)[:, 0]
+fft_peaks = FFTpeaks(data, simLength - transient)[0][:,0]
 
 
 
@@ -203,7 +203,7 @@ bands = [["1-delta", "2-theta", "3-alfa", "4-beta", "5-gamma"], [(2, 4), (4, 8),
 # This is resting state FC, measures between subject should correlate to some extent
 FC_corr=pd.DataFrame(columns=["FC_measure", "band", "frm","to","r"])
 tic=time.time()
-print("Calculating FC correlations BETWEEN subjects", end="")
+print("Calculating FC correlations BETWEEN subjects", end="\r")
 for i1, s1 in enumerate(subjects):
     print("Calculating FC correlations BETWEEN subjects - subject %i/%i" % (i1 + 1, len(subjects)), end="\r")
     for i2, s2 in enumerate(subjects):

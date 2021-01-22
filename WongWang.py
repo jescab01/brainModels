@@ -42,7 +42,7 @@ transient=100 # ms to exclude from timeseries due to initial transient
 #                            gamma=np.array([0.641]), sigma_noise=np.array([0.000000001]),
 #                            tau_s=np.array([100]), w=np.array([0.6]))
 
-m = models.ReducedWongWangExcInh(G=np.array([0]), I_o=np.array([0.5]),
+m = models.ReducedWongWangExcInh(G=np.array([0]), I_o=np.array([0.381]),
                                  J_N=np.array([0.15]), J_i=np.array([1]),
                                  W_e=np.array([1]), W_i=np.array([0.7]),
                                  a_e=np.array([0.310]), a_i=np.array([0.615]),
@@ -89,7 +89,7 @@ timeseriesPlot(data[1:5], raw_time, regionLabels[1:], main_folder)#, title=t, mo
 raw_Si = output[0][1][:, 1, :, 0].T
 timeseriesPlot(raw_Si[0:4], raw_time, regionLabels[1:], main_folder)#, title=t, mode="png")
 # Fourier Analysis plot
-# FFTplot(data[1:5], simLength, regionLabels[1:], main_folder,  mode="html")
+FFTplot(data[1:5], simLength, regionLabels[1:], main_folder,  mode="html")
 
 
 
