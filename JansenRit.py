@@ -16,7 +16,7 @@ from toolbox import timeseriesPlot, FFTplot, FFTpeaks, AEC, PLV, PLI, epochingTo
 # This simulation will generate FC for a virtual "Subject".
 # Define identifier (i.e. could be 0,1,11,12,...)
 subjectid = ".1995JansenRit"
-wd=os.getcwd()
+wd = os.getcwd()
 main_folder=wd+"\\"+subjectid
 ctb_folder=wd+"\\CTB_data\\output\\"
 if subjectid not in os.listdir(ctb_folder):
@@ -37,12 +37,9 @@ samplingFreq = 1000 #Hz
 transient=1000 # ms to exclude from timeseries due to initial transient
 
 m = models.JansenRit(A=np.array([3.25]), B=np.array([22]), J=np.array([1]),
-
                      a=np.array([0.1]), a_1=np.array([135]), a_2=np.array([108]),
                      a_3=np.array([33.75]), a_4=np.array([33.75]), b=np.array([0.05]),
-
-                     mu=np.array([0.09]), nu_max=np.array([0.0025]), p_max=np.array([0.15]), p_min=np.array([0.3]),
-
+                     mu=np.array([0.09]), nu_max=np.array([0.0025]), p_max=np.array([0]), p_min=np.array([0]),
                      r=np.array([0.56]), v0=np.array([6]))
 
 

@@ -36,17 +36,20 @@ simLength = 4100 # ms - relatively long simulation to be able to check for power
 samplingFreq = 1000 #Hz
 transient=100 # ms to exclude from timeseries due to initial transient
 
-m = models.larter_breakspear.LarterBreakspear(C=np.array([0.1]), Iext=np.array([0.3]),
-    QV_max=np.array([1]), QZ_max=np.array([1]),
-    TCa=np.array([-0.01]), TK=np.array([0]), TNa=np.array([0.3]),
-    VCa=np.array([1]), VK=np.array([-0.7]), VL=np.array([-0.5]), VNa=np.array([0.53]),
-    VT=np.array([0]), ZT=np.array([0]),
-    aee=np.array([0.36]), aei=np.array([2]), aie=np.array([2]), ane=np.array([1]), ani=np.array([0.4]), b=np.array([0.1]),
-    d_Ca=np.array([0.15]), d_K=np.array([0.3]), d_Na=np.array([0.15]), d_V=np.array([0.65]), d_Z=np.array([0.65]),
-    gCa=np.array([1]), gK=np.array([2]), gL=np.array([0.5]), gNa=np.array([6.7]),
-    phi=np.array([0.7]), rNMDA=np.array([0.25]), t_scale=np.array([0.7]), tau_K=np.array([1]))
+m = models.LarterBreakspear(C=np.array([0.6]), Iext=np.array([0]),
+                            QV_max=np.array([1]), QZ_max=np.array([1]),
+                            TCa=np.array([-0.01]), TK=np.array([0]), TNa=np.array([0.3]),
+                            VCa=np.array([1]), VK=np.array([-0.7]), VL=np.array([-0.5]), VNa=np.array([0.53]),
+                            VT=np.array([0]), ZT=np.array([0]),
+                            aee=np.array([0.36]), aei=np.array([2]), aie=np.array([2]), ane=np.array([1]),
+                            ani=np.array([0.4]),
+                            b=np.array([0.1]),
+                            d_Ca=np.array([0.15]), d_K=np.array([0.3]), d_Na=np.array([0.15]), d_V=np.array([0.65]),
+                            d_Z=np.array([0.65]),
+                            gCa=np.array([1]), gK=np.array([2]), gL=np.array([0.5]), gNa=np.array([6.7]),
+                            phi=np.array([0.7]), rNMDA=np.array([0.25]), t_scale=np.array([0.1]), tau_K=np.array([1]))
 
-coup = coupling.HyperbolicTangent(a=np.array([1]), b=np.array([1]), midpoint=np.array([0]), sigma=np.array([1]))
+coup = coupling.HyperbolicTangent(a=np.array([15]), b=np.array([1]), midpoint=np.array([0]), sigma=np.array([1]))
 
 # integrator: dt=T(ms)=1000/samplingFreq(kHz)=1/samplingFreq(HZ)
 # integrator = integrators.HeunStochastic(dt=1000/samplingFreq, noise=noise.Additive(nsig=np.array([5e-6])))
@@ -76,10 +79,10 @@ data = np.asarray([np.average(raw_data, axis=0)])
 data = np.concatenate((data, raw_data), axis=0)  # concatenate mean signal: data[0]; with raw_data: data[1:end]
 
 # Check initial transient and cut data
-timeseriesPlot(data, raw_time, regionLabels, main_folder, True)
+timeseriesPlot(data, raw_time, regionLabels, main_folder, mode="html")
 
 # Fourier Analysis plot
-FFTplot(data, simLength, regionLabels, main_folder)
+FFTplot(data, simLength, regionLabels, main_folder, mode="html")
 
 fft_peaks = FFTpeaks(data, simLength - transient)[:, 0]
 

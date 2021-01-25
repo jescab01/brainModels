@@ -17,8 +17,11 @@ def timeseriesPlot(signals, timepoints, regionLabels, folder="figures", title=No
     for ch in range(len(signals)):
         fig.add_scatter(x=timepoints, y=signals[ch], name=regionLabels[ch])
 
+    if title is None:
+        title="TimeSeries"
+
     if mode=="html":
-        pio.write_html(fig, file=folder+"/TimeSeries.html", auto_open=True)
+        pio.write_html(fig, file=folder+"/"+title+".html", auto_open=True)
     elif mode=="png":
         pio.write_image(fig, file=folder+"/TimeSeries_"+str(time.time())+".png", engine="kaleido")
     elif mode=="inline":
@@ -44,7 +47,7 @@ def epochingTool(signals, epoch_length, samplingFreq, msg=""):
 
 
 def FFTplot(signals, simLength, regionLabels, folder="figures", title=None, mode="html"):
-    fig = go.Figure(layout=dict(title=title, xaxis=dict(title='Frequency'), yaxis=dict(title='Module')))
+    fig = go.Figure(layout=dict(title=title, xaxis=dict(title='Frequency', type='log'), yaxis=dict(title='Module', type='log')))
     for i in range(len(signals)):
         fft = abs(np.fft.fft(signals[i]))  # FFT for each channel signal
         fft = fft[range(int(len(signals[0]) / 2))]  # Select just positive side of the symmetric FFT
