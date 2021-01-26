@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 simLength = 5000 # ms - relatively long simulation to be able to check for power distribution
 samplingFreq = 1000 #Hz
 
-m = models.Generic2dOscillator(I=np.array([5]), variables_of_interest=("V","W"))
+m = models.Generic2dOscillator(I=np.array([5]))
 
 coup = coupling.Linear(a=np.array([0]), b=np.array([0]))
 
@@ -26,22 +26,23 @@ mon = (monitors.Raw(),)
 # eqn_t.parameters['tau'] = 50.0
 
 ## Sinusoid input
-# eqn_t = equations.Sinusoid()
-# eqn_t.parameters['amp'] = 1
-# eqn_t.parameters['frequency'] = 0.02 #kHz
-# eqn_t.parameters['onset'] = 500 #ms
-# eqn_t.parameters['offset'] = 2000 #ms
-
-## Drifting Sinusoid input
-eqn_t = equations.DriftSinusoid()
+eqn_t = equations.Sinusoid()
 eqn_t.parameters['amp'] = 1
-eqn_t.parameters['f_init'] = 10 #Hz
-eqn_t.parameters['f_end'] = 20 #Hz
+eqn_t.parameters['frequency'] = 20.0 #Hz
 eqn_t.parameters['onset'] = 500 #ms
 eqn_t.parameters['offset'] = 2000 #ms
-eqn_t.parameters['feedback'] = True # Grow&Shrink (True) - Grow|Shrink(False)
-eqn_t.parameters['sim_length'] = simLength # Grow&Shrink (True) - Grow|Shrink(False)
-eqn_t.parameters['dt'] = 1000/samplingFreq # in ms
+
+## Drifting Sinusoid input
+# eqn_t = equations.DriftSinusoid()
+# eqn_t.parameters['amp'] = 0.1
+# eqn_t.parameters['f_init'] = 10 #Hz
+# eqn_t.parameters['f_end'] = 20 #Hz
+# eqn_t.parameters['onset'] = 500 #ms
+# eqn_t.parameters['offset'] = 2000 #ms
+# eqn_t.parameters['feedback'] = True # Grow&Shrink (True) - Grow|Shrink(False)
+# eqn_t.parameters['sim_length'] = simLength # Grow&Shrink (True) - Grow|Shrink(False)
+# eqn_t.parameters['dt'] = 1000/samplingFreq # in ms
+# eqn_t.parameters['avg'] = 0.5 #
 
 
 weighting = np.zeros((4, ))

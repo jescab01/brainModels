@@ -38,7 +38,7 @@ samplingFreq = 1024 #Hz
 transient=1000 #ms
 
 # Parameters from Roberts (2019)
-m = models.LarterBreakspear(C=np.array([0.6]), Iext=np.array([0]),
+m = models.LarterBreakspear(C=np.array([0.6]), Iext=np.array([0.3]),
                             QV_max=np.array([1]), QZ_max=np.array([1]),
                             TCa=np.array([-0.01]), TK=np.array([0]), TNa=np.array([0.3]),
                             VCa=np.array([1]), VK=np.array([-0.7]), VL=np.array([-0.5]), VNa=np.array([0.53]),
