@@ -1,0 +1,169 @@
+3.2967 	WARNING 	We strongly recommend you activate the PTB sound engine in PsychoPy prefs as the preferred audio engine. Its timing is vastly superior. Your prefs are currently set to use ['sounddevice', 'PTB', 'pyo', 'pygame'] (in that order).
+12.6143 	WARNING 	Import Error: No module named 'psychtoolbox'. Using event module for keyboard component.
+307.2729 	WARNING 	User requested fullscreen with size [1024  768], but screen is actually [1920, 1080]. Using actual size
+308.5156 	EXP 	Created window1 = Window(allowGUI=False, allowStencil=False, args=UNKNOWN, autoLog=True, bitsMode=UNKNOWN, blendMode='avg', bpc=(8, 8, 8), color=array([0., 0., 0.]), colorSpace='rgb', depthBits=8, fullscr=<method-wrapper '__getattribute__' of attributeSetter object at 0x0000026FB67120C8>, gamma=None, gammaErrorPolicy='raise', kwargs=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x000002703E1611C8>, multiSample=False, name='window1', numSamples=2, pos=[0.0, 0.0], screen=0, size=array([1920, 1080]), stencilBits=0, stereo=False, units='height', useFBO=True, useRetina=False, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+308.5163 	EXP 	window1: mouseVisible = True
+316.5044 	EXP 	window1: recordFrameIntervals = False
+316.9590 	EXP 	window1: recordFrameIntervals = True
+317.1424 	EXP 	window1: recordFrameIntervals = False
+371.7695 	EXP 	Created intrText = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoLog=True, bold=False, color='white', colorSpace='named', contrast=1.0, depth=0.0, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.1, italic=False, languageStyle='LTR', name='intrText', opacity=1.0, ori=0, pos=array([0., 0.]), rgb=array([255., 255., 255.]), text=str(...), units='height', win=Window(...), wrapWidth=1)
+385.7362 	EXP 	Created target = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoLog=True, bold=False, color='white', colorSpace='named', contrast=1.0, depth=0.0, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.05, italic=False, languageStyle='LTR', name='target', opacity=1.0, ori=0, pos=array([0., 0.]), rgb=array([255., 255., 255.]), text='default text', units='height', win=Window(...), wrapWidth=1)
+497.7803 	ERROR 	intrText._borderPix requested without .border
+698.1876 	ERROR 	intrText._borderPix requested without .border
+758.0552 	EXP 	intrText: autoDraw = True
+758.1648 	ERROR 	intrText._borderPix requested without .border
+761.5067 	DATA 	Mouse: Left button down, pos=(1128,564)
+761.6361 	DATA 	Mouse:  Left button up, pos=(1128,564)
+765.3536 	DATA 	Keypress: v
+765.4856 	ERROR 	intrText._borderPix requested without .border
+794.0788 	ERROR 	intrText._borderPix requested without .border
+862.0233 	ERROR 	intrText._borderPix requested without .border
+867.9043 	ERROR 	intrText._borderPix requested without .border
+869.7557 	EXP 	Imported Sentences4Verification.xlsx as conditions, 123 conditions, 3 params
+869.7632 	EXP 	Created sequence: random, trialTypes=123, nReps=1, seed=None
+869.9401 	ERROR 	intrText._borderPix requested without .border
+872.7441 	ERROR 	intrText._borderPix requested without .border
+873.8109 	ERROR 	intrText._borderPix requested without .border
+875.1568 	ERROR 	intrText._borderPix requested without .border
+878.1366 	ERROR 	intrText._borderPix requested without .border
+887.5866 	EXP 	New trial (rep=0, index=0): OrderedDict([('sentence', 'un loro es un salmon'), ('type', 'S'), ('corrAns', 'f')])
+887.6708 	EXP 	New trial (rep=0, index=1): OrderedDict([('sentence', 'un labrador tiene plumas'), ('type', 'P'), ('corrAns', 'f')])
+887.7002 	EXP 	New trial (rep=0, index=2): OrderedDict([('sentence', 'un labrador puede comer'), ('type', 'P2'), ('corrAns', 'v')])
+887.7401 	EXP 	New trial (rep=0, index=3): OrderedDict([('sentence', 'un bacalo es un pez'), ('type', 'S1'), ('corrAns', 'v')])
+887.7501 	EXP 	New trial (rep=0, index=4): OrderedDict([('sentence', 'un labrador puede parir'), ('type', 'P1'), ('corrAns', 'v')])
+887.7595 	EXP 	New trial (rep=0, index=5): OrderedDict([('sentence', 'un salmon puede volar'), ('type', 'P'), ('corrAns', 'f')])
+887.7842 	ERROR 	intrText._borderPix requested without .border
+887.8212 	DATA 	Mouse: Left button down, pos=(1534,596)
+887.8272 	DATA 	Mouse:  Left button up, pos=(1534,596)
+887.8568 	EXP 	intrText: autoDraw = False
+887.8568 	EXP 	intrText: autoDraw = False
+887.8568 	EXP 	target: color = 'white (named)'
+887.8568 	EXP 	target: text = 'un loro es un salmon'
+887.8568 	EXP 	target: autoDraw = False
+887.8568 	EXP 	target: color = 'white (named)'
+887.8568 	EXP 	target: text = 'un labrador tiene plumas'
+887.8568 	EXP 	target: autoDraw = False
+887.8568 	EXP 	target: color = 'white (named)'
+887.8568 	EXP 	target: text = 'un labrador puede comer'
+887.8568 	EXP 	target: autoDraw = False
+887.8568 	EXP 	target: color = 'white (named)'
+887.8568 	EXP 	target: text = 'un bacalo es un pez'
+887.8568 	EXP 	target: autoDraw = False
+887.8568 	EXP 	target: color = 'white (named)'
+887.8568 	EXP 	target: text = 'un labrador puede parir'
+887.8568 	EXP 	target: autoDraw = False
+887.8568 	EXP 	target: color = 'white (named)'
+887.8568 	EXP 	target: text = 'un salmon puede volar'
+888.2679 	EXP 	target: autoDraw = True
+890.1574 	DATA 	Mouse: Left button down, pos=(1043,375)
+890.2571 	DATA 	Mouse:  Left button up, pos=(1043,375)
+891.8024 	EXP 	New trial (rep=0, index=6): OrderedDict([('sentence', 'un labrador tiene pelo'), ('type', 'P1'), ('corrAns', 'v')])
+891.8202 	EXP 	target: autoDraw = False
+891.8202 	EXP 	target: color = 'white (named)'
+891.8202 	EXP 	target: text = 'un labrador tiene pelo'
+892.0020 	DATA 	Keypress: f
+892.3016 	EXP 	target: autoDraw = True
+893.8191 	DATA 	Keypress: t
+895.5033 	DATA 	Keypress: v
+895.5047 	EXP 	New trial (rep=0, index=7): OrderedDict([('sentence', 'un canario puede volar'), ('type', 'P1'), ('corrAns', 'v')])
+895.5229 	EXP 	target: autoDraw = False
+895.5229 	EXP 	target: color = 'white (named)'
+895.5229 	EXP 	target: text = 'un canario puede volar'
+896.0032 	EXP 	target: autoDraw = True
+898.4879 	DATA 	Keypress: v
+898.4896 	EXP 	New trial (rep=0, index=8): OrderedDict([('sentence', 'un dalmata es un animal'), ('type', 'S2'), ('corrAns', 'v')])
+898.5070 	EXP 	target: autoDraw = False
+898.5070 	EXP 	target: color = 'white (named)'
+898.5070 	EXP 	target: text = 'un dalmata es un animal'
+898.9874 	EXP 	target: autoDraw = True
+900.4553 	DATA 	Keypress: v
+900.4565 	EXP 	New trial (rep=0, index=9): OrderedDict([('sentence', 'un labrador puede volar'), ('type', 'P'), ('corrAns', 'f')])
+900.4738 	EXP 	target: autoDraw = False
+900.4738 	EXP 	target: color = 'white (named)'
+900.4738 	EXP 	target: text = 'un labrador puede volar'
+900.9549 	EXP 	target: autoDraw = True
+902.2895 	DATA 	Keypress: f
+902.2907 	EXP 	New trial (rep=0, index=10): OrderedDict([('sentence', 'un labrador es un perro'), ('type', 'S1'), ('corrAns', 'v')])
+902.3077 	EXP 	target: autoDraw = False
+902.3077 	EXP 	target: color = 'white (named)'
+902.3077 	EXP 	target: text = 'un labrador es un perro'
+902.7893 	EXP 	target: autoDraw = True
+903.9401 	DATA 	Keypress: v
+903.9416 	EXP 	New trial (rep=0, index=11): OrderedDict([('sentence', 'un labrador tiene branquias'), ('type', 'P'), ('corrAns', 'f')])
+903.9593 	EXP 	target: autoDraw = False
+903.9593 	EXP 	target: color = 'white (named)'
+903.9593 	EXP 	target: text = 'un labrador tiene branquias'
+904.4399 	EXP 	target: autoDraw = True
+905.7908 	DATA 	Keypress: v
+905.7919 	EXP 	New trial (rep=0, index=12): OrderedDict([('sentence', 'un dalmata puede parir'), ('type', 'P1'), ('corrAns', 'v')])
+905.8088 	EXP 	target: autoDraw = False
+905.8088 	EXP 	target: color = 'white (named)'
+905.8088 	EXP 	target: text = 'un dalmata puede parir'
+906.2905 	EXP 	target: autoDraw = True
+907.5084 	DATA 	Keypress: v
+907.5095 	EXP 	New trial (rep=0, index=13): OrderedDict([('sentence', 'un loro es un pajaro'), ('type', 'S1'), ('corrAns', 'v')])
+907.5272 	EXP 	target: autoDraw = False
+907.5272 	EXP 	target: color = 'white (named)'
+907.5272 	EXP 	target: text = 'un loro es un pajaro'
+908.0245 	EXP 	target: autoDraw = True
+909.1590 	DATA 	Keypress: v
+909.1601 	EXP 	New trial (rep=0, index=14): OrderedDict([('sentence', 'un bacalao es un bacalao'), ('type', 'S0'), ('corrAns', 'v')])
+909.1785 	EXP 	target: autoDraw = False
+909.1785 	EXP 	target: color = 'white (named)'
+909.1785 	EXP 	target: text = 'un bacalao es un bacalao'
+909.6589 	EXP 	target: autoDraw = True
+910.8601 	DATA 	Keypress: v
+910.8616 	EXP 	New trial (rep=0, index=15): OrderedDict([('sentence', 'un loro puede comer'), ('type', 'P2'), ('corrAns', 'v')])
+910.8786 	EXP 	target: autoDraw = False
+910.8786 	EXP 	target: color = 'white (named)'
+910.8786 	EXP 	target: text = 'un loro puede comer'
+911.3598 	EXP 	target: autoDraw = True
+913.2941 	DATA 	Keypress: v
+913.2955 	EXP 	New trial (rep=0, index=16): OrderedDict([('sentence', 'un bacalao puede volar'), ('type', 'P'), ('corrAns', 'f')])
+913.3124 	EXP 	target: autoDraw = False
+913.3124 	EXP 	target: color = 'white (named)'
+913.3124 	EXP 	target: text = 'un bacalao puede volar'
+913.7938 	EXP 	target: autoDraw = True
+914.9116 	DATA 	Keypress: f
+914.9128 	EXP 	New trial (rep=0, index=17): OrderedDict([('sentence', 'un labrador es un canario'), ('type', 'S'), ('corrAns', 'f')])
+914.9298 	EXP 	target: autoDraw = False
+914.9298 	EXP 	target: color = 'white (named)'
+914.9298 	EXP 	target: text = 'un labrador es un canario'
+915.4112 	EXP 	target: autoDraw = True
+916.8122 	DATA 	Keypress: f
+916.8138 	EXP 	New trial (rep=0, index=18): OrderedDict([('sentence', 'un salmon tiene piel'), ('type', 'P2'), ('corrAns', 'v')])
+916.8312 	EXP 	target: autoDraw = False
+916.8312 	EXP 	target: color = 'white (named)'
+916.8312 	EXP 	target: text = 'un salmon tiene piel'
+917.3120 	EXP 	target: autoDraw = True
+918.5801 	DATA 	Keypress: v
+918.5811 	EXP 	New trial (rep=0, index=19): OrderedDict([('sentence', 'un canario es un animal'), ('type', 'S2'), ('corrAns', 'v')])
+918.5985 	EXP 	target: autoDraw = False
+918.5985 	EXP 	target: color = 'white (named)'
+918.5985 	EXP 	target: text = 'un canario es un animal'
+919.0794 	EXP 	target: autoDraw = True
+923.4987 	DATA 	Keypress: v
+923.5000 	EXP 	New trial (rep=0, index=20): OrderedDict([('sentence', 'un bacalao tiene pelo'), ('type', 'P'), ('corrAns', 'f')])
+923.5164 	EXP 	target: autoDraw = False
+923.5164 	EXP 	target: color = 'white (named)'
+923.5164 	EXP 	target: text = 'un bacalao tiene pelo'
+923.9984 	EXP 	target: autoDraw = True
+925.4158 	DATA 	Keypress: f
+925.4171 	EXP 	New trial (rep=0, index=21): OrderedDict([('sentence', 'un loro tiene pico'), ('type', 'P1'), ('corrAns', 'v')])
+925.4344 	EXP 	target: autoDraw = False
+925.4344 	EXP 	target: color = 'white (named)'
+925.4344 	EXP 	target: text = 'un loro tiene pico'
+925.9159 	EXP 	target: autoDraw = True
+927.2499 	DATA 	Keypress: v
+927.2510 	EXP 	New trial (rep=0, index=22): OrderedDict([('sentence', 'un dalmata puede ladrar'), ('type', 'P1'), ('corrAns', 'v')])
+927.2694 	EXP 	target: autoDraw = False
+927.2694 	EXP 	target: color = 'white (named)'
+927.2694 	EXP 	target: text = 'un dalmata puede ladrar'
+927.7496 	EXP 	target: autoDraw = True
+932.2362 	EXP 	New trial (rep=0, index=23): OrderedDict([('sentence', 'un loro puede hablar'), ('type', 'P0'), ('corrAns', 'v')])
+932.2551 	EXP 	target: autoDraw = False
+932.2551 	EXP 	target: autoDraw = False
+932.2551 	EXP 	target: color = 'white (named)'
+932.2551 	EXP 	target: text = 'un loro puede hablar'
+932.7352 	EXP 	target: autoDraw = True
+936.0203 	DATA 	Keypress: escape

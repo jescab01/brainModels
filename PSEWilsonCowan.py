@@ -36,6 +36,7 @@ os.mkdir(specific_folder)
 simLength = 4.5*1000 # ms
 samplingFreq = 1024 #Hz
 
+# Parameters from Abeysuriya 2018. Good working point at s=13.5; g=0.375
 m = models.WilsonCowan(P=np.array([0.31]), Q=np.array([0]),
                        a_e=np.array([4]), a_i=np.array([4]),
                        alpha_e=np.array([1]), alpha_i=np.array([1]),

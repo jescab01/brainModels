@@ -1,0 +1,47 @@
+0.9691 	WARNING 	We strongly recommend you activate the PTB sound engine in PsychoPy prefs as the preferred audio engine. Its timing is vastly superior. Your prefs are currently set to use ['sounddevice', 'PTB', 'pyo', 'pygame'] (in that order).
+5.2575 	WARNING 	Import Error: No module named 'psychtoolbox'. Using event module for keyboard component.
+9.5257 	WARNING 	User requested fullscreen with size [1024  768], but screen is actually [1920, 1080]. Using actual size
+10.5970 	EXP 	Created window1 = Window(allowGUI=False, allowStencil=False, args=UNKNOWN, autoLog=True, bitsMode=UNKNOWN, blendMode='avg', bpc=(8, 8, 8), color=array([0., 0., 0.]), colorSpace='rgb', depthBits=8, fullscr=<method-wrapper '__getattribute__' of attributeSetter object at 0x0000018D430E8208>, gamma=None, gammaErrorPolicy='raise', kwargs=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x0000018D43155F88>, multiSample=False, name='window1', numSamples=2, pos=[0.0, 0.0], screen=0, size=array([1920, 1080]), stencilBits=0, stereo=False, units='height', useFBO=True, useRetina=False, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+10.5976 	EXP 	window1: mouseVisible = True
+10.5977 	EXP 	window1: recordFrameIntervals = False
+10.7596 	EXP 	window1: recordFrameIntervals = True
+10.9433 	EXP 	window1: recordFrameIntervals = False
+11.2174 	EXP 	Created Words = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoLog=True, bold=False, color='white', colorSpace='named', contrast=1.0, depth=-1.0, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.1, italic=False, languageStyle='LTR', name='Words', opacity=1.0, ori=0, pos=array([0., 0.]), rgb=array([255., 255., 255.]), text='default text', units='height', win=Window(...), wrapWidth=1)
+11.3540 	EXP 	textbox: autoLog = True
+11.3540 	EXP 	Words: text = 'Word'
+11.3540 	EXP 	Words: autoDraw = True
+11.3540 	EXP 	textbox: autoDraw = True
+13.3126 	DATA 	Keypress: a
+13.4448 	DATA 	Keypress: s
+13.5280 	DATA 	Keypress: d
+13.5952 	DATA 	Keypress: f
+13.7281 	DATA 	Keypress: h
+13.8614 	DATA 	Keypress: a
+13.9950 	DATA 	Keypress: f
+14.1115 	DATA 	Keypress: h
+14.5115 	DATA 	Keypress: return
+15.2288 	DATA 	Keypress: a
+15.2789 	DATA 	Keypress: s
+15.3786 	DATA 	Keypress: d
+15.3947 	DATA 	Keypress: f
+15.5450 	DATA 	Keypress: h
+15.9124 	DATA 	Keypress: return
+16.3290 	DATA 	Keypress: a
+16.3626 	DATA 	Keypress: s
+16.4639 	DATA 	Keypress: d
+16.4958 	DATA 	Keypress: f
+16.7460 	DATA 	Keypress: h
+17.0959 	DATA 	Keypress: return
+17.9140 	DATA 	Mouse: Left button down, pos=(725,472)
+18.0136 	DATA 	Mouse:  Left button up, pos=(725,472)
+18.7968 	DATA 	Keypress: escape
+19.2636 	DATA 	Keypress: escape
+20.0807 	DATA 	Keypress: lctrl
+20.2808 	DATA 	Keypress: c
+21.8150 	DATA 	Mouse: Left button down, pos=(1022,716)
+21.8482 	DATA 	Mouse:  Left button up, pos=(1022,716)
+21.9316 	DATA 	Mouse: Left button down, pos=(1022,716)
+22.0319 	DATA 	Mouse:  Left button up, pos=(1022,716)
+41.3557 	EXP 	Words: autoDraw = False
+41.3557 	EXP 	textbox: autoDraw = False
+41.5430 	EXP 	window1: mouseVisible = True

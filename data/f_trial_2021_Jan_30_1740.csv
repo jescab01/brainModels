@@ -1,0 +1,3 @@
+﻿sentence,type,corrAns,trials.thisRepN,trials.thisTrialN,trials.thisN,trials.thisIndex,intrText.started,intrText.stopped,target.started,target.stopped,response.keys,response.corr,response.rt,response.started,response.stopped,participant,session,date,expName,psychopyVersion,frameRate,
+un labrador tiene plumas,P,f,0,0,0,113,11.110622999956831,None,13.221488299954217,None,f,1,2.7355447000009008,13.221488299954217,None,f,001,2021_Jan_30_1740,trial,2020.2.10,59.9973241269069,
+un canario puede volar,P1,v,0,1,1,19,,,16.47239609999815,None,None,0,,16.47239609999815,None,f,001,2021_Jan_30_1740,trial,2020.2.10,59.9973241269069,

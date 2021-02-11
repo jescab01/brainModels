@@ -69,7 +69,9 @@ data = np.asarray([np.average(raw_data, axis=0)])
 data = np.concatenate((data, raw_data), axis=0)  # concatenate mean signal: data[0]; with raw_data: data[1:end]
 
 # Check initial transient and cut data
-timeseriesPlot(data, raw_time, regionLabels, main_folder, True)
+timeseriesPlot(data[:10], raw_time, regionLabels, main_folder, mode="html")
+
+
 
 # Fourier Analysis plot
 FFTplot(data, simLength, regionLabels, main_folder)

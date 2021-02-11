@@ -33,35 +33,36 @@ emp_subj = "subj04"
 
 tic0=time.time()
 
-simLength = 4100 # ms - relatively long simulation to be able to check for power distribution
+simLength = 100 # ms - relatively long simulation to be able to check for power distribution
 samplingFreq = 1000 #Hz
-transient=100 # ms to exclude from timeseries due to initial transient
+transient=0 # ms to exclude from timeseries due to initial transient
 
 # m = models.ReducedWongWang(I_o=np.array([0.33]), J_N=np.array([0.2609]),
 #                            a=np.array([0.27]), b=np.array([0.108]), d=np.array([154]),
 #                            gamma=np.array([0.641]), sigma_noise=np.array([0.000000001]),
 #                            tau_s=np.array([100]), w=np.array([0.6]))
 
-m = models.ReducedWongWangExcInh(G=np.array([0]), I_o=np.array([0.381]),
+m = models.ReducedWongWangExcInh(G=np.array([1]), I_o=np.array([0.382]),
                                  J_N=np.array([0.15]), J_i=np.array([1]),
                                  W_e=np.array([1]), W_i=np.array([0.7]),
-                                 a_e=np.array([0.310]), a_i=np.array([0.615]),
-                                 b_e=np.array([0.125]), b_i=np.array([0.177]),
-                                 d_e=np.array([160]), d_i=np.array([87]),
-                                 gamma_e=np.array([0.641]), gamma_i=np.array([1]),
+                                 a_e=np.array([310]), a_i=np.array([615]),
+                                 b_e=np.array([125]), b_i=np.array([177]),
+                                 d_e=np.array([0.160]), d_i=np.array([0.087]),
+                                 gamma_e=np.array([0.000641]), gamma_i=np.array([0.001]),
                                  lamda=np.array([0]),
                                  tau_e=np.array([100]), tau_i=np.array([10]),
                                  w_p=np.array([1.4]))
+
 # integrator: dt=T(ms)=1000/samplingFreq(kHz)=1/samplingFreq(HZ)
-# integrator = integrators.HeunStochastic(dt=1, noise=noise.Additive(nsig=np.array([0.01])))
-integrator = integrators.HeunDeterministic(dt=1)
+#integrator = integrators.HeunStochastic(dt=0.01, noise=noise.Additive(nsig=np.array([0.0001])))
+integrator = integrators.HeunDeterministic(dt=0.01)
 # ppi_fig = PhasePlaneInteractive(model=m, integrator=integrator)
 # ppi_fig.show()
 
 
 conn = connectivity.Connectivity.from_file(ctb_folder+"CTB_connx66_"+emp_subj+".zip")
 conn.weights = conn.scaled_weights(mode="tract")
-coup = coupling.Linear(a=np.array([2]))
+coup = coupling.Linear(a=np.array([0.3]))
 
 mon = (monitors.Raw(),)
 
@@ -84,7 +85,10 @@ data = np.concatenate((data, raw_data), axis=0)  # concatenate mean signal: data
 
 # # Check initial transient and cut data
 # t="W_I="+str(wi)+"  |  J_N="+str(jn)+"  |  I_o="+str(io)
-timeseriesPlot(data[1:5], raw_time, regionLabels[1:], main_folder)#, title=t, mode="png")
+timeseriesPlot(data[:10], raw_time, regionLabels, mode="html")
+
+
+
 # # Inihibitory subpopulation
 raw_Si = output[0][1][:, 1, :, 0].T
 timeseriesPlot(raw_Si[0:4], raw_time, regionLabels[1:], main_folder)#, title=t, mode="png")

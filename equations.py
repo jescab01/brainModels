@@ -249,13 +249,13 @@ class Sinusoid(TemporalApplicableEquation):
 
     equation = Final(
         label="Sinusoid Equation",
-        default="amp * sin(6.283185307179586 * frequency * var)",
+        default="amp * sin(6.283185307179586 * frequency/1000 * var)",
         doc=""":math:`amp \\sin(2.0 \\pi frequency x)` """)
 
     parameters = Attr(
         field_type=dict,
         label="Sinusoid Parameters",
-        default=lambda: {"amp": 1.0, "frequency": 0.01, "onset": 100.0, "offset":400.0}) #kHz #"pi": numpy.pi,
+        default=lambda: {"amp": 1.0, "frequency": 10.0, "onset": 100.0, "offset":400.0}) #kHz #"pi": numpy.pi,
 
 
     def evaluate(self, var):
