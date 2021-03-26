@@ -16,7 +16,7 @@ from toolbox import timeseriesPlot, FFTplot, FFTpeaks, AEC, PLV, PLI, epochingTo
 # Define the name of the NMM to test
 # and the connectome to use from the available subjects
 subjectid = ".1973WilsonCowan"
-emp_subj = "subj04"
+emp_subj = "AVG_NEMOS"
 
 
 wd=os.getcwd()
@@ -27,14 +27,16 @@ ctb_folder = wd + "\\CTB_data\\output\\"
 if subjectid not in os.listdir(ctb_folder):
     os.mkdir(ctb_folder+subjectid)
 
-specific_folder = main_folder+"\\""PSE"+subjectid+"-"+time.strftime("m%md%dy%Y-t%Hh.%Mm.%Ss")
+specific_folder = main_folder+"\\""PSE"+subjectid+"on"+emp_subj+"-"+time.strftime("m%md%dy%Y-t%Hh.%Mm.%Ss")
 os.mkdir(specific_folder)
 
 
 
 # Prepare simulation parameters
-simLength = 4.5*1000 # ms
+simLength = 10*1000 # ms
 samplingFreq = 1024 #Hz
+transient = 1000 #ms
+
 
 # Parameters from Abeysuriya 2018. Good working point at s=13.5; g=0.375
 m = models.WilsonCowan(P=np.array([0.31]), Q=np.array([0]),
@@ -56,13 +58,13 @@ m = models.WilsonCowan(P=np.array([0.31]), Q=np.array([0]),
 integrator = integrators.HeunDeterministic(dt=1000/samplingFreq)
 
 
-conn = connectivity.Connectivity.from_file(ctb_folder+"CTB_connx66_"+emp_subj+".zip")
+conn = connectivity.Connectivity.from_file(ctb_folder+emp_subj+"_AAL2red.zip")
 conn.weights = conn.scaled_weights(mode="tract")
 
 mon = (monitors.Raw(),)
 
-coupling_vals = np.arange(0.15,2,0.1)
-speed_vals = np.arange(0.5,18,3)
+coupling_vals = np.arange(0, 2, 0.015)
+speed_vals = np.arange(0.5, 25, 1)
 
 results_fft_peak=list()
 results_fc=list()
@@ -82,8 +84,8 @@ for g in coupling_vals:
 
         # Extract data: "output[a][b][:,0,:,0].T" where:
         # a=monitorIndex, b=(data:1,time:0) and [200:,0,:,0].T arranges channel x timepoints and to remove initial transient.
-        raw_data = output[0][1][500:, 0, :, 0].T
-        raw_time = output[0][0][500:]
+        raw_data = output[0][1][transient:, 0, :, 0].T
+        raw_time = output[0][0][transient:]
 
         # average signals to obtain mean signal frequency peak
         data = np.asarray([np.average(raw_data, axis=0)])
@@ -96,7 +98,7 @@ for g in coupling_vals:
 
 
         newRow = [g,s]
-        bands = [["1-delta", "2-theta", "3-alfa", "4-beta", "5-gamma"], [(2, 4), (4, 8), (8, 12), (12, 30), (30, 45)]]
+        bands = [["1-delta", "2-theta", "3-alpha", "4-beta", "5-gamma1"], [(2, 4), (4, 8), (8, 12), (12, 30), (30, 60)]]
         for b in range(len(bands[0])):
             (lowcut, highcut) = bands[1][b]
 
@@ -129,19 +131,19 @@ for g in coupling_vals:
             # np.savetxt(fname, plv)
 
             # ## PLI
-            pli = PLI(efPhase)
+            # pli = PLI(efPhase)
             # fname = wd+"\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"pli"
             # np.savetxt(fname, pli)
 
             ## AEC
-            aec = AEC(efEnvelope)
+            # aec = AEC(efEnvelope)
             # fname = wd+"\\CTB_data\\output\\"+subjectid+"\\"+bands[0][b]+"corramp.txt"
             # np.savetxt(fname, aec)
 
             # Load empirical data to make simple comparisons
-            plv_emp=np.loadtxt(wd+"\\CTB_data\\output\\FC_subj04\\"+bands[0][b]+"plv.txt")
-            pli_emp=np.loadtxt(wd+"\\CTB_data\\output\\FC_subj04\\"+bands[0][b]+"pli.txt")
-            aec_emp=np.loadtxt(wd+"\\CTB_data\\output\\FC_subj04\\"+bands[0][b]+"corramp.txt")
+            plv_emp=np.loadtxt(wd+"\\CTB_data\\output\\FC_"+emp_subj+"\\"+bands[0][b]+"_plv.txt")
+            # pli_emp=np.loadtxt(wd+"\\CTB_data\\output\\FC_subj04\\"+bands[0][b]+"pli.txt")
+            # aec_emp=np.loadtxt(wd+"\\CTB_data\\output\\FC_subj04\\"+bands[0][b]+"corramp.txt")
 
             # Comparisons
             t1 = np.zeros(shape=(2, 2145))
@@ -150,17 +152,17 @@ for g in coupling_vals:
             plv_r = np.corrcoef(t1)[0, 1]
             newRow.append(plv_r)
 
-            t2 = np.zeros(shape=(2, 2145))
-            t2[0, :] = pli[np.triu_indices(66, 1)]
-            t2[1, :] = pli_emp[np.triu_indices(66, 1)]
-            pli_r = np.corrcoef(t2)[0, 1]
-            newRow.append(pli_r)
-
-            t3 = np.zeros(shape=(2, 2145))
-            t3[0, :] = aec[np.triu_indices(66, 1)]
-            t3[1, :] = aec_emp[np.triu_indices(66, 1)]
-            aec_r = np.corrcoef(t3)[0, 1]
-            newRow.append(aec_r)
+            # t2 = np.zeros(shape=(2, 2145))
+            # t2[0, :] = pli[np.triu_indices(66, 1)]
+            # t2[1, :] = pli_emp[np.triu_indices(66, 1)]
+            # pli_r = np.corrcoef(t2)[0, 1]
+            # newRow.append(pli_r)
+            #
+            # t3 = np.zeros(shape=(2, 2145))
+            # t3[0, :] = aec[np.triu_indices(66, 1)]
+            # t3[1, :] = aec_emp[np.triu_indices(66, 1)]
+            # aec_r = np.corrcoef(t3)[0, 1]
+            # newRow.append(aec_r)
 
         results_fc.append(newRow)
 
@@ -179,28 +181,30 @@ df1.to_csv(specific_folder+"/PSE_FFTpeaks"+simname+".csv", index=False)
 paramSpace(df1, title=simname, folder=specific_folder)
 
 # Working on FC results
-df=pd.DataFrame(results_fc, columns=["G", "speed", "plvD_r", "pliD_r", "aecD_r", "plvT_r","pliT_r", "aecT_r","plvA_r",
-                                  "pliA_r","aecA_r", "plvB_r","pliB_r","aecB_r", "plvG_r","pliG_r", "aecG_r"])
+df=pd.DataFrame(results_fc, columns=["G", "speed", "plvD_r",  "plvT_r", "plvA_r", "plvB_r", "plvG_r"])
+                            #columns=["G", "speed", "plvD_r", "pliD_r", "aecD_r", "plvT_r","pliT_r", "aecT_r","plvA_r",
+                                  #"pliA_r","aecA_r", "plvB_r","pliB_r","aecB_r", "plvG_r","pliG_r", "aecG_r"])
 
 df.to_csv(specific_folder+"/PSE_FC"+simname+".csv", index=False)
 
 
 dfPLV = df[["G", "speed", "plvD_r", "plvT_r", "plvA_r", "plvB_r", "plvG_r"]]
 dfPLV.columns=["G", "speed", "Delta", "Theta", "Alpha", "Beta", "Gamma"]
-dfPLI = df[["G", "speed", "pliD_r", "pliT_r", "pliA_r", "pliB_r", "pliG_r"]]
-dfPLI.columns=["G", "speed", "Delta", "Theta", "Alpha", "Beta", "Gamma"]
-dfAEC = df[["G", "speed", "aecD_r", "aecT_r", "aecA_r", "aecB_r", "aecG_r"]]
-dfAEC.columns=["G", "speed", "Delta", "Theta", "Alpha", "Beta", "Gamma"]
+# dfPLI = df[["G", "speed", "pliD_r", "pliT_r", "pliA_r", "pliB_r", "pliG_r"]]
+# dfPLI.columns=["G", "speed", "Delta", "Theta", "Alpha", "Beta", "Gamma"]
+# dfAEC = df[["G", "speed", "aecD_r", "aecT_r", "aecA_r", "aecB_r", "aecG_r"]]
+# dfAEC.columns=["G", "speed", "Delta", "Theta", "Alpha", "Beta", "Gamma"]
 
-del g, s, i, b, aec, aec_emp, aec_r, plv, plv_emp, plv_r, pli, pli_emp, pli_r
-del analyticalSignal, bands, efPhase, efSignals, efEnvelope, filterSignals, highcut, lowcut
-del newRow, t1, t2, t3, tic
-del sim, coup, conn, models, samplingFreq, simLength, mon, output, raw_time, raw_data
+# del g, s, i, b, aec, aec_emp, aec_r, plv, plv_emp, plv_r, pli, pli_emp, pli_r
+# del analyticalSignal, bands, efPhase, efSignals, efEnvelope, filterSignals, highcut, lowcut
+# del newRow, t1, t2, t3, tic
+# del sim, coup, conn, models, samplingFreq, simLength, mon, output, raw_time, raw_data
 
 
-paramSpace(dfPLI, 0.5, subjectid+"_PLI", folder=specific_folder)
-paramSpace(dfAEC, 0.5, subjectid+"_AEC", folder=specific_folder)
 paramSpace(dfPLV, 0.5, subjectid+"_PLV", folder=specific_folder)
+# paramSpace(dfPLI, 0.5, subjectid+"_PLI", folder=specific_folder)
+# paramSpace(dfAEC, 0.5, subjectid+"_AEC", folder=specific_folder)
+
 
 # df.to_csv("loop0-2m.csv", index=False)
 # b=df.sort_values(by=["noise", "G"])

@@ -217,7 +217,7 @@ def stimSpace(df, structure, stimulationWeights, regionLabels, folder, region=re
     fig.update_layout(
         title_text='FC of simulated signals by stimulation frequency and weight || ' + t_c + ' region: ' + region,
         template="simple_white")
-    pio.write_html(fig, file=folder+"/stimSpace-f&w%s.html" % t_c, auto_open=auto_open)
+    pio.write_html(fig, file=folder+"/stimSpace-f&a%s.html" % t_c, auto_open=auto_open)
 
 
 stimSpace(df_t, structure_t, w_subset, regionLabels, folder=specific_folder, region=regionLabels[region_id], t_c="target", auto_open="True")
