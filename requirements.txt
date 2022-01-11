@@ -1,15 +1,40 @@
-tvb-library~=2.0.5
-tvb-data~=2.0
-# plotly~=4.6.0
-plotly~=4.14.3
-mne~=0.20.0
-numpy~=1.18.2
-matplotlib~=3.2.1
-scipy~=1.4.1
-pandas>=1.0.3
-unidip~=0.1.1
+## Working with Python 3.9; Not working for Python 3.10 @ 11/1/2022
+
+## Version [11/1/2022]  # Previously used version
+tvb-library # tvb-library~=2.0.5
+tvb-data
+plotly # plotly~=4.14.3
+mne
+numpy
+matplotlib # matplotlib~=3.2.1
+scipy
+pandas # pandas>=1.0.3
+unidip # unidip~=0.1.1
 jupyter
+scikit-learn
+statsmodels
+mpi4py
+fooof
+
+## REMEMBER (for stimulation): I'm using a modified version of "tvb/datatypes/equations.py".
+# Also a new script for JRD2003 model in "tvb/simulator/models/jansen_rit_david_mine.py"
+# A modified veresion of coupling with a new sigmoidal for JRD2003 model.
+# Look for them in edited_TVBscritps or Ask for them @Jescab01; then replace them in site-packages
+
+## ADDITIONAL MODELS in tvb-root/tvb_contrib/models:
+# https://github.com/the-virtual-brain/tvb-root/tree/master/tvb_contrib/tvb/contrib/simulator/models
+
+## ON DEVELOPMENT: toolbox is a local package - to import its functions use:
+# import sys
+# sys.path.append("D:\\Users\Jesus CabreraAlvarez\PycharmProjects\\")  # temporal append
+# from toolbox.signals import timeseriesPlot
+# from toolbox.fft import FFTplot, FFTpeaks
+
+## CTB_data now in:
+#  E:\\LCCN_Local\PycharmProjects\CTB_data2\\
 
 # Check version:  pip freeze | findstr plotly
 #   or into python: import module; module.__version__.
+# install manually tvb data; download from: https://zenodo.org/record/4263723#.YG8SzOgzaHs
+
 
