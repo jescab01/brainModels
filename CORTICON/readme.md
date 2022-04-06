@@ -1,0 +1,1 @@
+This folder contains supplementary information about the poster: A brain netwokr model of extended jansen-rit neural masses to enhance spectral richness and heterogeneity in MEEG resting state simulations
