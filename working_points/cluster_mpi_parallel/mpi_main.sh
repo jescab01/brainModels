@@ -2,8 +2,8 @@
 ##----------------------- Start job description -----------------------
 #SBATCH --partition=standard
 #SBATCH --job-name=PSE2.0
-#SBATCH --ntasks=600
-#SBATCH --time=25:00:00
+#SBATCH --ntasks=400
+#SBATCH --time=15:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=F_r_e@hotmail.es
 #SBATCH --error=logs/err-%j.log

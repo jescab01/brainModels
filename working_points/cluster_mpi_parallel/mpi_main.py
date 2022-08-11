@@ -10,7 +10,7 @@ https://towardsdatascience.com/parallel-programming-in-python-with-message-passi
 execute in terminal with : mpiexec -n 4 python mpi_main.py
 """
 
-name = "test"
+name = "WPpass"
 
 # get number of processors and processor rank
 comm = MPI.COMM_WORLD
@@ -19,18 +19,24 @@ rank = comm.Get_rank()
 
 ## Define param combinations
 # Common simulation requirements
-subj_ids = [35, 49, 50, 58, 59, 64, 65, 71, 75, 77]
-subjects = ["NEMOS_0" + str(id) for id in subj_ids]
-subjects.append("NEMOS_AVG")
+# subj_ids = [35, 49, 50, 58, 59, 64, 65, 71, 75, 77]
+# subjects = ["NEMOS_0" + str(id) for id in subj_ids]
+# subjects.append("NEMOS_AVG")
 
-modes = ["jr", "jrd", "jrd_def", "jrd_pTh", "cb", "jrdcb"]
+subjects = ["subj001"]
 
+modes = ["jr_gianluca"]
+
+outputs = ["mV"]
 
 coupling_vals = np.arange(0, 120, 1)
 speed_vals = np.arange(0.5, 25, 1)
+# p_vals = np.arange(0, 0.5, 0.01)
 n_rep = 3
 
-params = [[subj, mode, g, s, r] for subj in subjects for mode in modes for g in coupling_vals for s in speed_vals for r in range(n_rep)]
+params = [[subj, mode, g, s, r, out, "g&s"] for subj in subjects for mode in modes
+          for g in coupling_vals for s in speed_vals for r in range(n_rep) for out in outputs]
+
 params = np.asarray(params, dtype=object)
 n = params.shape[0]
 
@@ -76,7 +82,7 @@ else:  ## MASTER PROCESS _receive, merge and save results
     # print("Results")
     # print(final_results)
 
-    fResults_df = pd.DataFrame(final_results, columns=["Subject", "Mode", "G", "speed", "rep", "IAF", "module", "bModule", "band", "rPLV"])
+    fResults_df = pd.DataFrame(final_results, columns=["Subject", "Mode", "G", "v2", "rep", "out", "test_params", "IAF", "module", "bModule", "band", "rPLV"])
 
     ## Save resutls
     ## Folder structure - Local

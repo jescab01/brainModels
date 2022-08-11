@@ -226,8 +226,7 @@ class JansenRitDavid2003_th(models.Model):
         choices=("vExc1", "xExc1", "vInh1", "xInh1", "vPyr1", "xPyr1",
                  "vExc2", "xExc2", "vInh2", "xInh2", "vPyr2", "xPyr2"),
 
-        default=("vExc1", "vInh1", "vPyr1",
-                 "vExc2", "vInh2", "vPyr2"),
+        default=("vExc1", "vInh1", "vPyr1", "vExc2", "vInh2", "vPyr2"),
 
         doc="""This represents the default state-variables of this Model to be
             monitored. It can be overridden for each Monitor if desired. 
@@ -278,13 +277,13 @@ class JansenRitDavid2003_th(models.Model):
 
         src = local_coupling * (sum_vExc_vInh)
 
-
-        S_exc = (self.c * self.c_exc2pyr * self.e0) / (1 + numpy.exp(self.r * (self.v0 - self.c * self.c_pyr2exc * sum_vPyr)))
-        S_inh = (self.c * self.c_inh2pyr * self.e0) / (1 + numpy.exp(self.r * (self.v0 - self.c * self.c_pyr2inh * sum_vPyr)))
-        S_pyr = (self.e0) / (1 + numpy.exp(self.r * (self.v0 - sum_vExc_vInh)))
-
         ## Intrinsic input
         input = numpy.random.normal(self.p, self.sigma, (len(coupling[0]), 1))
+
+        S_pyr = (self.e0) / (1 + numpy.exp(self.r * (self.v0 - sum_vExc_vInh)))
+        S_exc = (self.c * self.c_exc2pyr * self.e0) / (1 + numpy.exp(self.r * (self.v0 - self.c * self.c_pyr2exc * sum_vPyr)))
+        S_inh = (self.c * self.c_inh2pyr * self.e0) / (1 + numpy.exp(self.r * (self.v0 - self.c * self.c_pyr2inh * sum_vPyr)))
+
 
         ### SLOW kinetic population
         dvExc1 = xExc1
@@ -308,7 +307,7 @@ class JansenRitDavid2003_th(models.Model):
         return derivative
 
 
-class JansenRitDavid2003_N(models.Model):
+class JansenRitDavid2003(models.Model):
     """
     The Jansen and Rit model as studied by David et al., 2003
     They showed how an extension of Jansen-Rit could enhance simulation spectrum to look closer to MEG recordings.
@@ -445,32 +444,24 @@ class JansenRitDavid2003_N(models.Model):
         domain=Range(lo=0.0, hi=0.05, step=0.005),
         doc="""Standard deviation of input firing rate following a Gaussian""")
 
-    # k = NArray(
-    #     label=r":math:`k1`",
-    #     default=numpy.array([0.5]),
-    #     domain=Range(lo=0.0, hi=1.0, step=0.05),
-    #     doc="""Contribution of simulated areas on ROI signal. +
-    #     In contrast, (1-k) contribution of unknown elements to signal (noise).""")
-
-
     # Used for phase-plane axis ranges and to bound random initial() conditions.
     state_variable_range = Final(
-        {
-            "vExc1": numpy.array([-1.0, 1.0]),
-            "xExc1": numpy.array([-2.0, 2.0]),
-            "vInh1": numpy.array([-5.0, 5.0]),
-            "xInh1": numpy.array([-5.0, 5.0]),
-            "vPyr1": numpy.array([-1.0, 1.0]),
-            "xPyr1": numpy.array([-6.0, 6.0]),
-
-            "vExc2": numpy.array([-1.0, 1.0]),
-            "xExc2": numpy.array([-2.0, 2.0]),
-            "vInh2": numpy.array([-5.0, 5.0]),
-            "xInh2": numpy.array([-5.0, 5.0]),
-            "vPyr2": numpy.array([-1.0, 1.0]),
-            "xPyr2": numpy.array([-6.0, 6.0]),
-        },
         label="State Variable ranges [lo, hi]",
+
+        default={"vPyr1": numpy.array([-1.0, 1.0]),
+                 "vExc1": numpy.array([-500.0, 500.0]),
+                 "vInh1": numpy.array([-50.0, 50.0]),
+                 "xPyr1": numpy.array([-6.0, 6.0]),
+                 "xExc1": numpy.array([-20.0, 20.0]),
+                 "xInh1": numpy.array([-500.0, 500.0]),
+
+                 "vPyr2": numpy.array([-1.0, 1.0]),
+                 "vExc2": numpy.array([-500.0, 500.0]),
+                 "vInh2": numpy.array([-50.0, 50.0]),
+                 "xPyr2": numpy.array([-6.0, 6.0]),
+                 "xExc2": numpy.array([-20.0, 20.0]),
+                 "xInh2": numpy.array([-500.0, 500.0])},
+
         doc="""The values for each state-variable should be set to encompass
         the expected dynamic range of that state-variable for the current 
         parameters, it is used as a mechanism for bounding random inital 
@@ -480,11 +471,11 @@ class JansenRitDavid2003_N(models.Model):
     variables_of_interest = List(
         of=str,
         label="Variables watched by Monitors",
-        choices=("vExc1", "xExc1", "vInh1", "xInh1", "vPyr1", "xPyr1",
-                 "vExc2", "xExc2", "vInh2", "xInh2", "vPyr2", "xPyr2"),
+        choices=("vPyr1", "vExc1", "vInh1", "xPyr1", "xExc1", "xInh1",
+                 "vPyr2", "vExc2", "vInh2", "xPyr2", "xExc2", "xInh2"),
 
-        default=("vExc1", "vInh1", "vPyr1",
-                 "vExc2", "vInh2", "vPyr2"),
+        default=("vPyr1", "vExc1", "vInh1", "xPyr1",
+                 "vPyr2", "vExc2", "vInh2", "xPyr2"),
 
         doc="""This represents the default state-variables of this Model to be
             monitored. It can be overridden for each Monitor if desired. 
@@ -493,10 +484,10 @@ class JansenRitDavid2003_N(models.Model):
             Correspondance in Jansen-Rit 1995:
             vExc, xExc = y1, y4; vInh, xInh = y2, y5; vPyr, xPyr = y0, y3.""")
 
-    state_variables = ["vExc1", "xExc1", "vInh1", "xInh1", "vPyr1", "xPyr1",
-                       "vExc2", "xExc2", "vInh2", "xInh2", "vPyr2", "xPyr2"]
+    state_variables = ["vPyr1", "vExc1", "vInh1", "xPyr1", "xExc1", "xInh1",
+                       "vPyr2", "vExc2", "vInh2", "xPyr2", "xExc2", "xInh2"]
     _nvar = 12
-    cvar = numpy.array([0, 2, 6, 8], dtype=numpy.int32)
+    cvar = numpy.array([1, 2, 7, 8], dtype=numpy.int32)
 
     def dfun(self, state_variables, coupling, local_coupling=0.0):
         r"""
@@ -504,23 +495,20 @@ class JansenRitDavid2003_N(models.Model):
         TODO: add equations and finish the model ...
         """
 
-        vExc1 = state_variables[0, :]
-        xExc1 = state_variables[1, :]
+        vPyr1 = state_variables[0, :]
+        vExc1 = state_variables[1, :]
         vInh1 = state_variables[2, :]
-        xInh1 = state_variables[3, :]
-        vPyr1 = state_variables[4, :]
-        xPyr1 = state_variables[5, :]
+        xPyr1 = state_variables[3, :]
+        xExc1 = state_variables[4, :]
+        xInh1 = state_variables[5, :]
 
-        vExc2 = state_variables[6, :]
-        xExc2 = state_variables[7, :]
+        vPyr2 = state_variables[6, :]
+        vExc2 = state_variables[7, :]
         vInh2 = state_variables[8, :]
-        xInh2 = state_variables[9, :]
-        vPyr2 = state_variables[10, :]
-        xPyr2 = state_variables[11, :]
+        xPyr2 = state_variables[9, :]
+        xExc2 = state_variables[10, :]
+        xInh2 = state_variables[11, :]
 
-        # NOTE for local couplings:
-            # vExc, xExc excitatory interneurons - gate for intrinsic (p) and external (lrc, src) inputs.
-            # vInh, xInh inhibitory interneurons; vPyr, xPyr pyramidal neurons
         sum_vPyr = self.w * vPyr1 + (1-self.w) * vPyr2
         sum_vExc_vInh = self.w * (vExc1 - vInh1) + (1-self.w) * (vExc2 - vInh2)
 
@@ -528,43 +516,48 @@ class JansenRitDavid2003_N(models.Model):
         lrc = coupling[0, :]
         src = local_coupling * (sum_vExc_vInh)
 
-        S_exc = (self.c * self.c_exc2pyr * self.e0) / (1 + numpy.exp(self.r * (self.v0 - self.c * self.c_pyr2exc * sum_vPyr)))
-        S_inh = (self.c * self.c_inh2pyr * self.e0) / (1 + numpy.exp(self.r * (self.v0 - self.c * self.c_pyr2inh * sum_vPyr)))
-        S_pyr = (self.e0) / (1 + numpy.exp(self.r * (self.v0 - sum_vExc_vInh)))
-
         ## Intrinsic input
         input = numpy.random.normal(self.p, self.sigma, (len(coupling[0]), 1))
 
+        S_pyr = self.e0 / (1 + numpy.exp(self.r * (self.v0 - sum_vExc_vInh)))
+        S_exc = self.e0 / (1 + numpy.exp(self.r * (self.v0 - self.c_pyr2exc * self.c * sum_vPyr)))
+        S_inh = self.e0 / (1 + numpy.exp(self.r * (self.v0 - self.c_pyr2inh * self.c * sum_vPyr)))
+
+        ## NOTE, for local couplings:
+        # vExc, xExc excitatory interneurons - gate for intrinsic (p) and external (lrc, src) inputs.
+        # vInh, xInh inhibitory interneurons
+        # vPyr, xPyr pyramidal neurons
+
         ### SLOW kinetic population
-        dvExc1 = xExc1
-        dxExc1 = self.He1 / self.tau_e1 * (input + S_exc + src + lrc) - (2 * xExc1) / self.tau_e1 - (vExc1 / self.tau_e1**2)
-        dvInh1 = xInh1
-        dxInh1 = self.Hi1 / self.tau_i1 * S_inh - (2 * xInh1) / self.tau_i1 - (vInh1 / self.tau_i1**2)
         dvPyr1 = xPyr1
-        dxPyr1 = self.He1 / self.tau_e1 * S_pyr - (2 * xPyr1) / self.tau_e1 - (vPyr1 / self.tau_e1**2)
+        dvExc1 = xExc1
+        dvInh1 = xInh1
+        dxPyr1 = self.He1 / self.tau_e1 * S_pyr - (2 * xPyr1) / self.tau_e1 - vPyr1 / self.tau_e1 ** 2
+        dxExc1 = self.He1 / self.tau_e1 * (input + self.c_exc2pyr * self.c * S_exc + lrc + src) - (2 * xExc1) / self.tau_e1 - vExc1 / self.tau_e1 ** 2
+        dxInh1 = self.Hi1 / self.tau_i1 * (self.c_inh2pyr * self.c * S_inh) - (2 * xInh1) / self.tau_i1 - vInh1 / self.tau_i1 ** 2
 
         ### FAST kinetic population
-        dvExc2 = xExc2
-        dxExc2 = self.He2 / self.tau_e2 * (input + S_exc + src + lrc) - (2 * xExc2) / self.tau_e2 - (vExc2 / self.tau_e2**2)
-        dvInh2 = xInh2
-        dxInh2 = self.Hi2 / self.tau_i2 * S_inh - (2 * xInh2) / self.tau_i2 - (vInh2 / self.tau_i2**2)
         dvPyr2 = xPyr2
-        dxPyr2 = self.He2 / self.tau_e2 * S_pyr - (2 * xPyr2) / self.tau_e2 - (vPyr2 / self.tau_e2**2)
+        dvExc2 = xExc2
+        dvInh2 = xInh2
+        dxPyr2 = self.He2 / self.tau_e2 * S_pyr - (2 * xPyr2) / self.tau_e2 - vPyr2 / self.tau_e2 ** 2
+        dxExc2 = self.He2 / self.tau_e2 * (input + self.c_exc2pyr * self.c * S_exc + lrc + src) - (2 * xExc2) / self.tau_e2 - vExc2 / self.tau_e2 ** 2
+        dxInh2 = self.Hi2 / self.tau_i2 * (self.c_inh2pyr * self.c * S_inh) - (2 * xInh2) / self.tau_i2 - vInh2 / self.tau_i2 ** 2
 
-        derivative = numpy.array([dvExc1, dxExc1, dvInh1, dxInh1, dvPyr1, dxPyr1,
-                                  dvExc2, dxExc2, dvInh2, dxInh2, dvPyr2, dxPyr2])
+        derivative = numpy.array([dvPyr1, dvExc1, dvInh1, dxPyr1, dxExc1, dxInh1,
+                                  dvPyr2, dvExc2, dvInh2, dxPyr2, dxExc2, dxInh2])
 
         return derivative
 
 
-class JansenRitDavid2003_N1(models.Model):
+class JansenRit1995(models.Model):
     """
-    The Jansen and Rit model as studied by David et al., 2003
-    They showed how an extension of Jansen-Rit could enhance simulation spectrum to look closer to MEG recordings.
+    This is a version of TVB Jansen-Rit model; in which I just change variable names
+    to get an easier to read model; as baseline for further work on it:
+        - adding specific noise to thalamus
+        - building JansenRitDavid model above.
+    """
 
-    Their extension consisted on introducing a gamma oscillator coupled to a main alpha oscillator into each subnode.
-    Couping the activity of those two oscillators resulted into broader alpha spectra, closer to reality.
-    """
     # Define traited attributes for this model, these represent possible kwargs.
     He = NArray(
         label=":math:`He`",
@@ -596,7 +589,8 @@ class JansenRitDavid2003_N1(models.Model):
         domain=Range(lo=3.12, hi=6.0, step=0.02),
         doc="""Firing threshold (PSP) for which a 50% firing rate is achieved.
         In other words, it is the value of the average membrane potential
-        corresponding to the inflection point of the sigmoid [mV]; 6.0 in JansenRit1995 and DavidFriston2003""")
+        corresponding to the inflection point of the sigmoid [mV]; 
+        6.0 in JansenRit1995 and DavidFriston2003""")
 
     e0 = NArray(
         label=":math:`e_0`",
@@ -617,28 +611,28 @@ class JansenRitDavid2003_N1(models.Model):
         domain=Range(lo=65.0, hi=1350.0, step=1.),
         doc="""Average number of synapses between populations.""")
 
-    c_11 = NArray(
+    c_pyr2exc = NArray(
         label=r":math:`c_11`",
         default=numpy.array([1.0]),
         domain=Range(lo=0.5, hi=1.5, step=0.1),
         doc="""Average probability of synaptic contacts in the feedback excitatory loop.
         It multiplies c; so c_11 = c = 135 contacts""")
 
-    c_12 = NArray(
+    c_exc2pyr = NArray(
         label=r":math:`c_12`",
         default=numpy.array([0.8]),
         domain=Range(lo=0.4, hi=1.2, step=0.1),
         doc="""Average probability of synaptic contacts in the slow feedback excitatory loop. 
         It multiplies c; so c_12 = c * 0.8 = 108 contacts""")
 
-    c_21 = NArray(
+    c_pyr2inh = NArray(
         label=r":math:`c_21`",
         default=numpy.array([0.25]),
         domain=Range(lo=0.125, hi=0.375, step=0.005),
         doc="""Average probability of synaptic contacts in the feedback inhibitory loop.
         It multiplies c; so c_21 = c_22 = c * 0.25 = 33.75 contacts""")
 
-    c_22 = NArray(
+    c_inh2pyr = NArray(
         label=r":math:`c_22`",
         default=numpy.array([0.25]),
         domain=Range(lo=0.125, hi=0.375, step=0.005),
@@ -651,17 +645,21 @@ class JansenRitDavid2003_N1(models.Model):
         domain=Range(lo=0.0, hi=0.22, step=0.01),
         doc="""Mean input firing rate""")
 
+    sigma = NArray(
+        label=r":math:`\sigma`",
+        default=numpy.array([0.022]),
+        domain=Range(lo=0.0, hi=0.05, step=0.005),
+        doc="""Standard deviation of input firing rate following a Gaussian""")
+
     # Used for phase-plane axis ranges and to bound random initial() conditions.
     state_variable_range = Final(
-        {
-            "v1": numpy.array([-1.0, 1.0]),
-            "x1": numpy.array([-2.0, 2.0]),
-            "v2": numpy.array([-5.0, 5.0]),
-            "x2": numpy.array([-5.0, 5.0]),
-            "v3": numpy.array([-1.0, 1.0]),
-            "x3": numpy.array([-6.0, 6.0]),
-        },
         label="State Variable ranges [lo, hi]",
+        default={"vPyr": numpy.array([-1.0, 1.0]),
+                 "vExc": numpy.array([-500.0, 500.0]),
+                 "vInh": numpy.array([-50.0, 50.0]),
+                 "xPyr": numpy.array([-6.0, 6.0]),
+                 "xExc": numpy.array([-20.0, 20.0]),
+                 "xInh": numpy.array([-500.0, 500.0])},
         doc="""The values for each state-variable should be set to encompass
         the expected dynamic range of that state-variable for the current 
         parameters, it is used as a mechanism for bounding random inital 
@@ -671,17 +669,17 @@ class JansenRitDavid2003_N1(models.Model):
     variables_of_interest = List(
         of=str,
         label="Variables watched by Monitors",
-        choices=("v1", "x1", "v2", "x2", "v3", "x3"),
-        default=("v1", "v2", "v3"),
+        choices=("vPyr", "vExc", "vInh", "xPyr", "xExc", "xInh"),
+        default=("vPyr", "vExc", "vInh", "xPyr"),
         doc="""This represents the default state-variables of this Model to be
                                     monitored. It can be overridden for each Monitor if desired. The 
                                     corresponding state-variable indices for this model are :math:`y0 = 0`,
                                     :math:`y1 = 1`, :math:`y2 = 2`, :math:`y3 = 3`, :math:`y4 = 4`, and
                                     :math:`y5 = 5`""")
 
-    state_variables = ["v1", "x1", "v2", "x2", "v3", "x3"]
+    state_variables = ["vPyr", "vExc", "vInh", "xPyr", "xExc", "xInh"]
     _nvar = 6
-    cvar = numpy.array([0, 2], dtype=numpy.int32)
+    cvar = numpy.array([1, 2], dtype=numpy.int32)
 
     def dfun(self, state_variables, coupling, local_coupling=0.0):
         r"""
@@ -689,35 +687,36 @@ class JansenRitDavid2003_N1(models.Model):
         TODO: add equations and finish the model ...
         """
 
-        v1 = state_variables[0, :]
-        x1 = state_variables[1, :]
-        v2 = state_variables[2, :]
-        x2 = state_variables[3, :]
-        v3 = state_variables[4, :]
-        x3 = state_variables[5, :]
+        vPyr = state_variables[0, :]
+        vExc = state_variables[1, :]
+        vInh = state_variables[2, :]
+        xPyr = state_variables[3, :]
+        xExc = state_variables[4, :]
+        xInh = state_variables[5, :]
 
         # NOTE: This is assumed to be \sum_j u_kj * S[y_{1_j} - y_{2_j}]
         lrc = coupling[0, :]
-        src = local_coupling * (v1 - v2)
+        src = local_coupling * (vExc - vInh)
 
-        y = v1 - v2
+        ## Intrinsic input
+        input = numpy.random.normal(self.p, self.sigma, (len(coupling[0]), 1))
 
-        S_1 = (self.c_12 * self.c * self.e0) / (1 + numpy.exp(self.r * (self.v0 - self.c_11 * self.c * v3)))
-        S_2 = (self.c_22 * self.c * self.e0) / (1 + numpy.exp(self.r * (self.v0 - self.c_21 * self.c * v3)))
-        S_3 = (self.e0) / (1 + numpy.exp(self.r * (self.v0 - y)))
+        S_pyr = self.e0 / (1 + numpy.exp(self.r * (self.v0 - (vExc - vInh))))
+        S_exc = self.e0 / (1 + numpy.exp(self.r * (self.v0 - self.c_pyr2exc * self.c * vPyr)))
+        S_inh = self.e0 / (1 + numpy.exp(self.r * (self.v0 - self.c_pyr2inh * self.c * vPyr)))
 
         ## NOTE, for local couplings:
-        # v1, x1 excitatory interneurons - gate for intrinsic (p) and external (lrc, src) inputs.
-        # v2, x2 inhibitory interneurons
-        # v3, x3 pyramidal neurons
+        # vExc, xExc excitatory interneurons - gate for intrinsic (p) and external (lrc, src) inputs.
+        # vInh, xInh inhibitory interneurons
+        # vPyr, xPyr pyramidal neurons
 
-        dv1 = x1
-        dx1 = self.He / self.tau_e * (self.p + S_1 + src + lrc) - (2 * x1) / self.tau_e - (v1 / self.tau_e ** 2)
-        dv2 = x2
-        dx2 = self.Hi / self.tau_i * S_2 - (2 * x2) / self.tau_i - (v2 / self.tau_i ** 2)
-        dv3 = x3
-        dx3 = self.He / self.tau_e * S_3 - (2 * x3) / self.tau_e - (v3 / self.tau_e ** 2)
+        dvPyr = xPyr
+        dvExc = xExc
+        dvInh = xInh
+        dxPyr = self.He / self.tau_e * S_pyr - (2 * xPyr) / self.tau_e - vPyr / self.tau_e ** 2
+        dxExc = self.He / self.tau_e * (input + self.c_exc2pyr * self.c * S_exc + lrc + src) - (2 * xExc) / self.tau_e - vExc / self.tau_e ** 2
+        dxInh = self.Hi / self.tau_i * (self.c_inh2pyr * self.c * S_inh) - (2 * xInh) / self.tau_i - vInh / self.tau_i ** 2
 
-        derivative = numpy.array([dv1, dx1, dv2, dx2, dv3, dx3])
+        derivative = numpy.array([dvPyr, dvExc, dvInh, dxPyr, dxExc, dxInh])
 
         return derivative

@@ -13,9 +13,17 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go  # for data visualisation
 
 from tvb.simulator.lab import *
-from tvb.simulator.models.jansen_rit_david_mine import JansenRitDavid2003_N
+from tvb.simulator.models.jansen_rit_david_mine import JansenRitDavid2003
 
-from toolbox import PLV, epochingTool, multitapper, timeseriesPlot
+import sys
+sys.path.append("E:\\LCCN_Local\\PycharmProjects\\")
+from toolbox.fft import multitapper
+from toolbox.signals import epochingTool, timeseriesPlot
+from toolbox.fc import PLV
+from toolbox.mixes import timeseries_spectra
+
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def signalsJRD(params, individual, verbose=True):
@@ -33,11 +41,11 @@ def signalsJRD(params, individual, verbose=True):
     conn = connectivity.Connectivity.from_file(ctb_folder+emp_subj+structure+".zip")
     conn.weights = conn.scaled_weights(mode="tract")
 
-    p_array=np.where((conn.region_labels == 'Thalamus_R') | (conn.region_labels == 'Thalamus_L'), 0.22, 0)
-    sigma_array=np.where((conn.region_labels == 'Thalamus_R') | (conn.region_labels == 'Thalamus_L'), 0.022, 0)
+    sigma_array = np.asarray([0.022 if 'Thal' in roi else 0 for roi in conn.region_labels])
+    p_array = np.asarray([0.22 if 'Thal' in roi else 0 for roi in conn.region_labels])
 
     # Parameters from Stefanovski 2019.
-    m = JansenRitDavid2003_N(He1=np.array([3.25]), Hi1=np.array([22]),  # SLOW population
+    m = JansenRitDavid2003(He1=np.array([3.25]), Hi1=np.array([22]),  # SLOW population
                              tau_e1=np.array([10.8]), tau_i1=np.array([22.0]),
                              He2=np.array([3.25]), Hi2=np.array([22]),  # FAST population
                              tau_e2=np.array([4.6]), tau_i2=np.array([2.9]),
@@ -46,7 +54,7 @@ def signalsJRD(params, individual, verbose=True):
                              c_pyr2exc=np.array([1.0]), c_exc2pyr=np.array([0.8]),
                              c_pyr2inh=np.array([0.25]), c_inh2pyr=np.array([0.25]),
                              v0=np.array([6.0]), e0=np.array([0.005]), r=np.array([0.56]),
-                             p=np.array([p_array]), sigma=np.array([sigma_array]))
+                             p=p_array, sigma=sigma_array)
 
     ## Remember to hold tau*H constant.
     m.He1, m.Hi1 = np.array([32.5 / m.tau_e1]), np.array([440 / m.tau_i1])
@@ -81,13 +89,13 @@ def signalsJRD(params, individual, verbose=True):
         print("Simulation time: %0.2f sec" % (time.time() - tic0,))
     # Extract data cutting initial transient; PSP in pyramidal cells as exc_input - inh_input
     # Mount PSP output as: w * (vExc1 - vInh1) + (1 - w) * (vExc2 - vInh2)
-    raw_data = m.w * (output[0][1][transient:, 0, :, 0].T - output[0][1][transient:, 1, :, 0].T) + \
-               (1 - m.w) * (output[0][1][transient:, 3, :, 0].T - output[0][1][transient:, 4, :, 0].T)
+    raw_data = m.w * output[0][1][transient:, 0, :, 0].T + (1 - m.w) * output[0][1][transient:, 4, :, 0].T
 
     return raw_data
 
 
-def fc_fit(params, raw_data):
+def fc_fit(params, raw_data, FC_cortex_idx):
+
     ctb_folder = params["ctb_folder"]
     emp_subj = params["emp_subj"]
     structure = params["structure"]
@@ -99,7 +107,7 @@ def fc_fit(params, raw_data):
         conn.region_labels = conn.region_labels[sc_subset]
 
     results = list()
-    bands = [["1-delta", "2-theta", "3-alpha", "4-beta", "5-gamma1"], [(2, 4), (4, 8), (8, 12), (12, 30), (30, 45)]]
+    bands = [["1-delta", "2-theta", "3-alpha", "4-beta", "5-gamma"], [(2, 4), (4, 8), (8, 12), (12, 30), (30, 45)]]
     for b in range(len(bands[0])):
 
         (lowcut, highcut) = bands[1][b]
@@ -126,15 +134,16 @@ def fc_fit(params, raw_data):
 
         # Load empirical data to make simple comparisons
         if fc_subset:
-            plv_emp = np.loadtxt(ctb_folder + "FC_" + emp_subj + "\\" + bands[0][b] + "_plv.txt")[:, fc_subset][
+            plv_emp = np.loadtxt(ctb_folder + "FCrms_" + emp_subj + "/" + bands[0][b] + "_plv_rms.txt", delimiter=',')[:, fc_subset][
                 fc_subset]
         else:
-            plv_emp = np.loadtxt(ctb_folder + "FC_" + emp_subj + "\\" + bands[0][b] + "_plv.txt")
+            plv_emp = np.loadtxt(ctb_folder + "FCrms_" + emp_subj + "/" + bands[0][b] + "_plv_rms.txt", delimiter=',')[:,
+                        FC_cortex_idx][FC_cortex_idx]
 
         # Comparisons
-        t1 = np.zeros(shape=(2, len(conn.region_labels) ** 2 // 2 - len(conn.region_labels) // 2))
-        t1[0, :] = plv[np.triu_indices(len(conn.region_labels), 1)]
-        t1[1, :] = plv_emp[np.triu_indices(len(conn.region_labels), 1)]
+        t1 = np.zeros(shape=(2, len(plv) ** 2 // 2 - len(plv) // 2))
+        t1[0, :] = plv[np.triu_indices(len(plv), 1)]
+        t1[1, :] = plv_emp[np.triu_indices(len(plv), 1)]
         plv_r = np.corrcoef(t1)[0, 1]
 
         # t2 = np.zeros(shape=(2, len(conn.region_labels) ** 2 // 2 - len(conn.region_labels) // 2))
@@ -148,39 +157,99 @@ def fc_fit(params, raw_data):
 
 
 def cost_function(params, signals, rule="alpha_vs_all", save_curves=False):
-
+    """
+    Cost length depends on the number of empirical spectra over which we will run the optimization.
+    """
     ctb_folder = params["ctb_folder"]
     emp_subj = params["emp_subj"]
     samplingFreq = params["samplingFreq"]  #Hz
     fc_subset = params["fc_subset"]
 
+    spectra_folder = "E:\LCCN_Local\PycharmProjects\SpectraAnalysis\\fieldtrip_data\\"
+
+    emp_labs = np.loadtxt(spectra_folder + emp_subj + "\\labels.txt", delimiter="\n", dtype=str)
+    emp_labs = [lab[1:-1] for lab in emp_labs]
+
+    # Define regions implicated in Functional analysis: remove  Cerebelum, Thalamus, Caudate (i.e. subcorticals)
+    cortical_MEGlabs = ['Left Precentral gyrus', 'Right Precentral gyrus',
+                        'Left Middle Frontal gyrus', 'Right Middle Frontal gyrus',
+                        'Left Inferior Frontal gyrus, Opercular',
+                        'Right Inferior Frontal gyrus, Opercular',
+                        'Left Inferior Frontal gyrus, Triangular',
+                        'Right Inferior Frontal gyrus, Triangular',
+                        'Left Inferior Frontal gyrus, Orbital',
+                        'Right Inferior Frontal gyrus, Orbital', 'Left Rolandic operculum',
+                        'Right Rolandic operculum', 'Left Supplementary Motor area',
+                        'Right Supplementary Motor area', 'Left Olfactory cortex',
+                        'Right Olfactory cortex', 'Left Superior Frontal gyrus, Medial',
+                        'Right Superior Frontal gyrus, Medial',
+                        'Left Superior Frontal gyrus, Medial Orbital',
+                        'Right Superior Frontal gyrus, Medial Orbital',
+                        'Left Gyrus Rectus', 'Right Gyrus Rectus', 'Left Insula',
+                        'Right Insula', 'Left Cingulate gyrus, Anterior part',
+                        'Right Cingulate gyrus, Anterior part',
+                        'Left Cingulate gyrus, Middle part',
+                        'Right Cingulate gyrus, Middle part',
+                        'Left Cingulate gyrus, Posterior part',
+                        'Right Cingulate gyrus, Posterior part', 'Left Hippocampus',
+                        'Right Hippocampus', 'Left Parahippocampus',
+                        'Right Parahippocampus',
+                        'Left Calcarine fissure and surrounding cortex',
+                        'Right Calcarine fissure and surrounding cortex', 'Left Cuneus',
+                        'Right Cuneus', 'Left Lingual gyrus', 'Right Lingual gyrus',
+                        'Left Superior Occipital lobe', 'Right Superior Occipital lobe',
+                        'Left Middle Occipital lobe', 'Right Middle Occipital lobe',
+                        'Left Inferior Occipital lobe', 'Right Inferior Occipital lobe',
+                        'Left Fusiform gyrus', 'Right Fusiform gyrus',
+                        'Left Postcentral gyrus', 'Right Postcentral gyrus',
+                        'Left Superior Parietal gyrus', 'Right Superior Parietal gyrus',
+                        'Left Inferior Parietal gyrus', 'Right Inferior Parietal gyrus',
+                        'Left Supramarginal gyrus', 'Right Supramarginal gyrus',
+                        'Left Angular gyrus', 'Right Angular gyrus', 'Left Precuneus',
+                        'Right Precuneus', 'Left Paracentral lobule',
+                        'Right Paracentral lobule',
+                        "Left Heschl's gyrus", "Right Heschl's gyrus",
+                        'Left Superior Temporal gyrus', 'Right Superior Temporal gyrus',
+                        'Left Temporal pole, Superior Temporal gyrus',
+                        'Right Temporal pole, Superior Temporal gyrus',
+                        'Left Middle temporal gyrus', 'Right Middle temporal gyrus',
+                        'Left Temporal pole, Middle temporal gyrus',
+                        'Right Temporal pole, Middle temporal gyrus',
+                        'Left Inferior Temporal gyrus', 'Right Inferior Temporal gyrus']
+    # load text with FC rois; check if match SC
+    MEG_cortex_idx = [list(emp_labs).index(roi) for roi in cortical_MEGlabs]
+
     # Calculate simulated spectra
-    sim_freqs, sim_spectra = multitapper(signals, samplingFreq, epoch_length=4, ntapper=4, smoothing=0.5, plot=False)
+    sim_freqs, sim_spectra = multitapper(signals, samplingFreq, cortical_rois, epoch_length=4, ntapper=4, smoothing=0.5, plot=False)
 
     try:  # Load empirical spectra
-        if fc_subset:
-            emp_spectra = np.loadtxt(ctb_folder+'BSsignals_spectra/'+emp_subj+'_flatSpectra.txt')[fc_subset, :]
-            gaussian_means = np.loadtxt(ctb_folder+'BSsignals_spectra/'+emp_subj+'_gaussianMean.txt')[fc_subset]
-        else:
-            emp_spectra = np.loadtxt(ctb_folder+'BSsignals_spectra/'+emp_subj+'_flatSpectra.txt')
-            emp_spectra[emp_spectra<0]=0
-            gaussian_means_emp = np.loadtxt(ctb_folder+'BSsignals_spectra/'+emp_subj+'_gaussianMean.txt')
 
-        emp_freqs = np.loadtxt(ctb_folder+'BSsignals_spectra/'+emp_subj+'_flatFreqs.txt')
+        if fc_subset:
+            print("You must check 'fc_subset' correspondance in FT labels order (AAL)")
+            pass
+            # emp_spectra = np.loadtxt(spectra_folder + emp_subj + "\\flat_fft.txt", delimiter=" ")# [fc_subset, :]
+
+        else:
+            emp_spectra = np.loadtxt(spectra_folder + emp_subj + "\\flat_fft.txt", delimiter=" ")[MEG_cortex_idx, :]
+            emp_spectra[emp_spectra < 0] = 0
+            # gaussian_means_emp = np.loadtxt(ctb_folder+'BSsignals_spectra/'+emp_subj+'_gaussianMean.txt')
+
+        emp_freqs = np.loadtxt(spectra_folder + emp_subj + "\\flat_freqs.txt", delimiter=" ")
 
     except:
         print('Did you calculate spectra for the current subject?')
 
-    # Pointwise cost
+    ## Pointwise cost
+
     emp_full_integral = np.trapz(emp_spectra, emp_freqs)
     sim_full_integral = np.trapz(sim_spectra, sim_freqs)
     # Use the differences point to point between spectra to have another measure of cost: use it as stop criteria.
     # these indexes cut simulated spectra to the length of empirical one
-    low_idx = int(np.where(emp_freqs[0] == sim_freqs)[0])
-    high_idx = int(np.where(emp_freqs[-1] == sim_freqs)[0])
+    low_idx = int(np.where(sim_freqs[0] == emp_freqs)[0])
+    high_idx = int(np.where(sim_freqs[-1] == emp_freqs)[0])  # sim freqs is shorter than emp_freqs
 
-    norm_emp_spectra = emp_spectra / emp_full_integral[:, np.newaxis]
-    norm_sim_spectra = sim_spectra[:, low_idx:high_idx + 1] / sim_full_integral[:, np.newaxis]
+    norm_emp_spectra = emp_spectra[:, low_idx:high_idx + 1] / emp_full_integral[:, np.newaxis]
+    norm_sim_spectra = sim_spectra / sim_full_integral[:, np.newaxis]
 
     pointwise_cost = np.sum(abs(norm_sim_spectra - norm_emp_spectra), axis=1)
 
@@ -223,48 +292,48 @@ def cost_function(params, signals, rule="alpha_vs_all", save_curves=False):
         else:
             return fft_cost, pointwise_cost
 
-    elif rule == "pointwise_comparison":
-        # New approach (28 oct). Use the mean of the gaussian model as reference and check the differences point to point
-        # between the spectra to see where the error is: above or below the mean, then move w consequently.
-        mean_idx = [np.argmin(np.abs(emp_freqs - m)) for m in gaussian_means_emp]
-        norm_spectra_diff = norm_sim_spectra - norm_emp_spectra
+    # elif rule == "pointwise_comparison":
+    #     # New approach (28 oct). Use the mean of the gaussian model as reference and check the differences point to point
+    #     # between the spectra to see where the error is: above or below the mean, then move w consequently.
+    #     mean_idx = [np.argmin(np.abs(emp_freqs - m)) for m in gaussian_means_emp]
+    #     norm_spectra_diff = norm_sim_spectra - norm_emp_spectra
+    #
+    #     sum_preMean = np.array([sum(norm_spectra_diff[i, :mean_i]) for i, mean_i in enumerate(mean_idx)])
+    #     sum_postMean = np.array([sum(norm_spectra_diff[i, mean_i:]) for i, mean_i in enumerate(mean_idx)])
+    #
+    #     # np.vstack((sum_preMean, um_postMean)).T  # Visualization purposes
+    #
+    #     diff = sum_preMean - sum_postMean  # if positive -> move to higher frequencies (i.e. lower w)
+    #
+    #     if save_curves:
+    #         return diff, pointwise_cost, (sim_spectra, sim_freqs, emp_spectra, emp_freqs)
+    #     else:
+    #         return diff, pointwise_cost
 
-        sum_preMean = np.array([sum(norm_spectra_diff[i, :mean_i]) for i, mean_i in enumerate(mean_idx)])
-        sum_postMean = np.array([sum(norm_spectra_diff[i, mean_i:]) for i, mean_i in enumerate(mean_idx)])
-
-        # np.vstack((sum_preMean, um_postMean)).T  # Visualization purposes
-
-        diff = sum_preMean - sum_postMean  # if positive -> move to higher frequencies (i.e. lower w)
-
-        if save_curves:
-            return diff, pointwise_cost, (sim_spectra, sim_freqs, emp_spectra, emp_freqs)
-        else:
-            return diff, pointwise_cost
-
-    elif rule == "fooof":
-        ## Use foof to model the simulated spectra and define whether it should move up or down.
-        fm = FOOOF(max_n_peaks=1)  # peak_width_limits=[2.0, 10.0]
-        # Define frequency range across which to model the spectrum
-        freq_range = [5, 40]  # Consider that multitapper uses the range [2, 45]
-
-        gaussian_means_sim = []
-        for roi in range(len(sim_spectra)):
-            # Model the power spectrum with FOOOF, and print out a report
-            fm.fit(sim_freqs, sim_spectra[roi], freq_range)
-            # Calculate gaussian mean
-            if np.isnan(fm.get_params('peak_params', 'CF')):
-                gaussian_means_sim.append(0)
-            else:
-                gaussian_means_sim.append(fm.get_params('peak_params', 'CF'))
-
-
-        # positive cost implies lowering down 'w'
-        cost = gaussian_means_emp - np.array(gaussian_means_sim)
-
-        if save_curves:
-            return cost, (sim_spectra, sim_freqs, emp_spectra, emp_freqs)
-        else:
-            return cost
+    # elif rule == "fooof":
+    #     ## Use foof to model the simulated spectra and define whether it should move up or down.
+    #     fm = FOOOF(max_n_peaks=1)  # peak_width_limits=[2.0, 10.0]
+    #     # Define frequency range across which to model the spectrum
+    #     freq_range = [5, 40]  # Consider that multitapper uses the range [2, 45]
+    #
+    #     gaussian_means_sim = []
+    #     for roi in range(len(sim_spectra)):
+    #         # Model the power spectrum with FOOOF, and print out a report
+    #         fm.fit(sim_freqs, sim_spectra[roi], freq_range)
+    #         # Calculate gaussian mean
+    #         if np.isnan(fm.get_params('peak_params', 'CF')):
+    #             gaussian_means_sim.append(0)
+    #         else:
+    #             gaussian_means_sim.append(fm.get_params('peak_params', 'CF'))
+    #
+    #
+    #     # positive cost implies lowering down 'w'
+    #     cost = gaussian_means_emp - np.array(gaussian_means_sim)
+    #
+    #     if save_curves:
+    #         return cost, (sim_spectra, sim_freqs, emp_spectra, emp_freqs)
+    #     else:
+    #         return cost
 
 
 def cost_derivative(history):
@@ -291,6 +360,7 @@ def show_evolution(history, regionLabels, report_rois, title="some", output_fold
     # unpack Spectra
     sim_spectra, sim_freqs = curves_sim_fft, curves_sim_freq
     emp_spectra, emp_freqs = history["curves_emp"][0], history["curves_emp"][1]
+
     # unpack History
     fc_history = np.asarray(history["fc"])
     costfft_history = np.asarray(history["cost"])[:, 0, :]
@@ -478,22 +548,118 @@ params = {
     "mode": "FC",  # FC, FFT. Whenever FFT gradient descent will be applied.
 
     "simLength": 22000, #44000
-    "repetitions": 3,
+    "repetitions": 2,
     "transient": 2000,
     "samplingFreq": 1000,
 
     "emp_subj": "NEMOS_049",
-    "structure": "_AAL2red",
+    "structure": "_AAL2pTh",
     "sc_subset": None,  # AAL2red_rois_dmn,  # Subsets over structure
     "fc_subset": None,  # AAL2red_rois_dmn,  # Subsets over AAL2red (main FC output shape from brainstorm).
-    "ctb_folder": "D:\\Users\Jesus CabreraAlvarez\PycharmProjects\\brainModels\\CTB_data\\output\\",
+    "ctb_folder": "E:\\LCCN_Local\PycharmProjects\CTB_data2\\",
     "verbose": False}
+
+spectra_folder = "E:\LCCN_Local\PycharmProjects\SpectraAnalysis\\fieldtrip_data\\"
 
 # Calculate number of rois
 conn = connectivity.Connectivity.from_file(params["ctb_folder"] + params["emp_subj"] + params["structure"]+".zip")
 n_rois = len(params["sc_subset"]) if params["sc_subset"] else len(conn.region_labels)
+
 # Define region labels
 regionLabels = conn.region_labels[params["sc_subset"]] if params["sc_subset"] else conn.region_labels
+emp_labs = np.loadtxt(spectra_folder + params["emp_subj"] + "\\labels.txt", delimiter="\n", dtype=str)
+emp_labs = [lab[1:-1] for lab in emp_labs]
+
+# Define regions implicated in Functional analysis: remove  Cerebelum, Thalamus, Caudate (i.e. subcorticals)
+## Edited for CORTICON. Reduced number of cortical rois comparable between AAL and AAL2.
+cortical_rois = ['Precentral_L', 'Precentral_R', 'Frontal_Mid_2_L', 'Frontal_Mid_2_R',
+                 'Frontal_Inf_Oper_L', 'Frontal_Inf_Oper_R', 'Frontal_Inf_Tri_L',
+                 'Frontal_Inf_Tri_R', 'Frontal_Inf_Orb_2_L', 'Frontal_Inf_Orb_2_R',
+                 'Rolandic_Oper_L', 'Rolandic_Oper_R', 'Supp_Motor_Area_L',
+                 'Supp_Motor_Area_R', 'Olfactory_L', 'Olfactory_R',
+                 'Frontal_Sup_Medial_L', 'Frontal_Sup_Medial_R',
+                 'Frontal_Med_Orb_L', 'Frontal_Med_Orb_R', 'Rectus_L', 'Rectus_R',
+                 'Insula_L', 'Insula_R', 'Cingulate_Ant_L', 'Cingulate_Ant_R', 'Cingulate_Mid_L',
+                 'Cingulate_Mid_R', 'Cingulate_Post_L', 'Cingulate_Post_R',
+                 'Hippocampus_L', 'Hippocampus_R', 'ParaHippocampal_L',
+                 'ParaHippocampal_R', 'Calcarine_L',
+                 'Calcarine_R', 'Cuneus_L', 'Cuneus_R', 'Lingual_L', 'Lingual_R',
+                 'Occipital_Sup_L', 'Occipital_Sup_R', 'Occipital_Mid_L',
+                 'Occipital_Mid_R', 'Occipital_Inf_L', 'Occipital_Inf_R',
+                 'Fusiform_L', 'Fusiform_R', 'Postcentral_L', 'Postcentral_R',
+                 'Parietal_Sup_L', 'Parietal_Sup_R', 'Parietal_Inf_L',
+                 'Parietal_Inf_R', 'SupraMarginal_L', 'SupraMarginal_R',
+                 'Angular_L', 'Angular_R', 'Precuneus_L', 'Precuneus_R',
+                 'Paracentral_Lobule_L', 'Paracentral_Lobule_R', 'Heschl_L', 'Heschl_R',
+                 'Temporal_Sup_L', 'Temporal_Sup_R', 'Temporal_Pole_Sup_L',
+                 'Temporal_Pole_Sup_R', 'Temporal_Mid_L', 'Temporal_Mid_R',
+                 'Temporal_Pole_Mid_L', 'Temporal_Pole_Mid_R', 'Temporal_Inf_L',
+                 'Temporal_Inf_R']
+cortical_MEGlabs = ['Left Precentral gyrus', 'Right Precentral gyrus',
+                    'Left Middle Frontal gyrus', 'Right Middle Frontal gyrus',
+                    'Left Inferior Frontal gyrus, Opercular',
+                    'Right Inferior Frontal gyrus, Opercular',
+                    'Left Inferior Frontal gyrus, Triangular',
+                    'Right Inferior Frontal gyrus, Triangular',
+                    'Left Inferior Frontal gyrus, Orbital',
+                    'Right Inferior Frontal gyrus, Orbital', 'Left Rolandic operculum',
+                    'Right Rolandic operculum', 'Left Supplementary Motor area',
+                    'Right Supplementary Motor area', 'Left Olfactory cortex',
+                    'Right Olfactory cortex', 'Left Superior Frontal gyrus, Medial',
+                    'Right Superior Frontal gyrus, Medial',
+                    'Left Superior Frontal gyrus, Medial Orbital',
+                    'Right Superior Frontal gyrus, Medial Orbital',
+                    'Left Gyrus Rectus', 'Right Gyrus Rectus', 'Left Insula',
+                    'Right Insula', 'Left Cingulate gyrus, Anterior part',
+                    'Right Cingulate gyrus, Anterior part',
+                    'Left Cingulate gyrus, Middle part',
+                    'Right Cingulate gyrus, Middle part',
+                    'Left Cingulate gyrus, Posterior part',
+                    'Right Cingulate gyrus, Posterior part', 'Left Hippocampus',
+                    'Right Hippocampus', 'Left Parahippocampus',
+                    'Right Parahippocampus',
+                    'Left Calcarine fissure and surrounding cortex',
+                    'Right Calcarine fissure and surrounding cortex', 'Left Cuneus',
+                    'Right Cuneus', 'Left Lingual gyrus', 'Right Lingual gyrus',
+                    'Left Superior Occipital lobe', 'Right Superior Occipital lobe',
+                    'Left Middle Occipital lobe', 'Right Middle Occipital lobe',
+                    'Left Inferior Occipital lobe', 'Right Inferior Occipital lobe',
+                    'Left Fusiform gyrus', 'Right Fusiform gyrus',
+                    'Left Postcentral gyrus', 'Right Postcentral gyrus',
+                    'Left Superior Parietal gyrus', 'Right Superior Parietal gyrus',
+                    'Left Inferior Parietal gyrus', 'Right Inferior Parietal gyrus',
+                    'Left Supramarginal gyrus', 'Right Supramarginal gyrus',
+                    'Left Angular gyrus', 'Right Angular gyrus', 'Left Precuneus',
+                    'Right Precuneus', 'Left Paracentral lobule',
+                    'Right Paracentral lobule',
+                    "Left Heschl's gyrus", "Right Heschl's gyrus",
+                    'Left Superior Temporal gyrus', 'Right Superior Temporal gyrus',
+                    'Left Temporal pole, Superior Temporal gyrus',
+                    'Right Temporal pole, Superior Temporal gyrus',
+                    'Left Middle temporal gyrus', 'Right Middle temporal gyrus',
+                    'Left Temporal pole, Middle temporal gyrus',
+                    'Right Temporal pole, Middle temporal gyrus',
+                    'Left Inferior Temporal gyrus', 'Right Inferior Temporal gyrus']
+
+# load text with FC rois; check if match SC
+FClabs = list(np.loadtxt(params["ctb_folder"] + "FCrms_" + params["emp_subj"] + "/roi_labels_rms.txt", dtype=str))
+FC_cortex_idx = [FClabs.index(roi) for roi in cortical_rois]  # find indexes in FClabs that matches cortical_rois
+
+SClabs = list(conn.region_labels)
+SC_cortex_idx = [SClabs.index(roi) for roi in cortical_rois]
+
+MEG_cortex_idx = [list(emp_labs).index(roi) for roi in cortical_MEGlabs]
+
+working_points = [#("jrd", "NEMOS_035", 80, 4.5),  # JRD
+                  ("jrd", "NEMOS_049", 13, 8.5),
+                  ("jrd", "NEMOS_050", 50, 4.5),
+                  ("jrd", "NEMOS_058", 48, 14.5),
+                  ("jrd", "NEMOS_059", 108, 4.5),
+                  ("jrd", "NEMOS_064", 108, 6.5),  ## originally at 85, 4.5
+                  ("jrd", "NEMOS_065", 85, 6.5),
+                  ("jrd", "NEMOS_071", 90, 6.5),
+                  ("jrd", "NEMOS_075", 80, 4.5),
+                  ("jrd", "NEMOS_077", 200, 10.5)]
 
 
 ######
@@ -501,131 +667,139 @@ regionLabels = conn.region_labels[params["sc_subset"]] if params["sc_subset"] el
 name = "GD_" + time.strftime("d%dm%my%Y-t%Hh%Mm")
 output_folder = "Gradient_results/"
 
-iterations = 200
+iterations = 75  # About 50 iterations to fit
 fit_method = "peak_balance"
 learning_rate = 5
 show_dynFFTs = True
 
 w = np.asarray([0.8]*n_rois)
-g, s = 93, 4.5  # For emp_subject NEMOS_049
 
 check_point = 25  # plot results each x iterations
 dyn_check = 50
-report_rois = [1, 4, 54, 64, 84]
+report_rois = [1, 4, 15, 54, 64]
 ###############
 
+for wp in working_points:
 
-tic0 = time.time()
-print("Initializing Gradient Descent Algortihm...")
-individual = list((g, s, w))
-history = {"theta": list(), "cost": list(), "curves": list(), "curves_emp":list(), "fc": list()}
-theta = w
+    _, params["emp_subj"], g, s = wp  # For emp_subject NEMOS_049
 
-for it in range(iterations):
-    tic = time.time()
+    tic0 = time.time()
+    print("Initializing Gradient Descent Algortihm...")
+    individual = list((g, s, w))
+    history = {"theta": list(), "cost": list(), "curves": list(), "curves_emp": list(), "fc": list()}
+    theta = w
 
-    print('\n\n Iteration %i  -  Simulating for g=%i - s=%0.1f  -  simulation Time : ' % (it, g, s), end="")
-    history["theta"].append(theta.T)
-    signals = [signalsJRD(params, individual, verbose=False) for i in range(params["repetitions"])]
-    print("%0.4f sec" % (time.time()-tic, ))
+    for it in range(iterations):
+        tic = time.time()
 
-    if it == 0:
-        pre_rFC = np.average([fc_fit(params, signals_i) for signals_i in signals], axis=0)
-        history["fc"].append(pre_rFC)
-        print("A priori rFC: ", end="")
-        print(pre_rFC)
-        print("pre-avg: %0.4f" % np.average(pre_rFC))
+        print('\n\n Iteration %i  -  Simulating for g=%i - s=%0.1f  -  simulation Time : ' % (it, g, s), end="")
+        history["theta"].append(list(theta.T))
+        signals = [signalsJRD(params, individual, verbose=False) for i in range(params["repetitions"])]
+        print("%0.4f sec" % (time.time()-tic, ))
 
-    else:
-        post_rFC = np.average([fc_fit(params, signals_i) for signals_i in signals], axis=0)
-        history["fc"].append(post_rFC)
-        print("A priori rFC: ", end="")
-        print(pre_rFC)
-        print("Post-fit rFC: ", end="")
-        print(post_rFC)
-        print("pre-avg: %0.4f | post-avg: %0.4f" % (np.average(pre_rFC), np.average(post_rFC)))
+        if it == 0:
+            pre_rFC = np.average([fc_fit(params, signals_i[SC_cortex_idx], FC_cortex_idx) for signals_i in signals], axis=0)
+            history["fc"].append(pre_rFC)
+            print("A priori rFC: ", end="")
+            print(pre_rFC)
+            print("pre-avg: %0.4f" % np.average(pre_rFC))
 
-    ### Calculate a relative difference (low frequencies vs all) in emp-sim spectra per roi
-    # "alpha_vs_all"; "pointwise_comparison"; "foof"
-    cost_fft, cost_pw, curves_emp, curves_sim_fft, curves_sim_freq, cost_fft_gamma = [], [], [], [], [], []
+        else:
+            post_rFC = np.average([fc_fit(params, signals_i[SC_cortex_idx], FC_cortex_idx) for signals_i in signals], axis=0)
+            history["fc"].append(post_rFC)
+            print("A priori rFC: ", end="")
+            print(pre_rFC)
+            print("Post-fit rFC: ", end="")
+            print(post_rFC)
+            print("pre-avg: %0.4f | post-avg: %0.4f" % (np.average(pre_rFC), np.average(post_rFC)))
 
-    for signals_i in signals:
-        cost = cost_function(params, signals_i, rule=fit_method, save_curves=True)
-        cost_fft.append(cost[0])
+        ### Calculate a relative difference (low frequencies vs all) in emp-sim spectra per roi
+        # "alpha_vs_all"; "pointwise_comparison"; "foof"
+        cost_fft, cost_pw, curves_emp, curves_sim_fft, curves_sim_freq, cost_fft_gamma = [], [], [], [], [], []
+
+        for signals_i in signals:
+            cost = cost_function(params, signals_i[SC_cortex_idx], rule=fit_method, save_curves=True)
+            cost_fft.append(cost[0])
+            if fit_method == "peak_balance":
+                cost_fft_gamma.append(cost[3])
+            cost_pw.append(cost[1])
+            curves_sim_fft.append(cost[2][0])
+            curves_sim_freq.append(cost[2][1])
+            curves_emp = cost[2][2:]
+
+        cost_fft = np.average(cost_fft, axis=0)
+        cost_fft_gamma = np.average(cost_fft_gamma, axis=0)
+        cost_pw = np.average(cost_pw, axis=0)
         if fit_method == "peak_balance":
-            cost_fft_gamma.append(cost[3])
-        cost_pw.append(cost[1])
-        curves_sim_fft.append(cost[2][0])
-        curves_sim_freq.append(cost[2][1])
-        curves_emp = cost[2][2:]
+            history["cost"].append([cost_fft, cost_pw, cost_fft_gamma])
+        else:
+            history["cost"].append([cost_fft, cost_pw])
 
-    cost_fft = np.average(cost_fft, axis=0)
-    cost_fft_gamma = np.average(cost_fft_gamma, axis=0)
-    cost_pw = np.average(cost_pw, axis=0)
-    if fit_method == "peak_balance":
-        history["cost"].append([cost_fft, cost_pw, cost_fft_gamma])
-    else:
-        history["cost"].append([cost_fft, cost_pw])
+        curves_sim_fft = np.average(curves_sim_fft, axis=0)
+        curves_sim_freq = np.average(curves_sim_freq, axis=0)
+        history["curves"].append([curves_sim_fft, curves_sim_freq])  # Curves[0]=sim_spectra; [1]sim_freqs; [2]emp_spectra; [3]emp_freqs
+        if it == 0:   # in the first iteration save empirical spectra and freqs
+            history["curves_emp"] = curves_emp
 
-    curves_sim_fft = np.average(curves_sim_fft, axis=0)
-    curves_sim_freq = np.average(curves_sim_freq, axis=0)
-    history["curves"].append([curves_sim_fft, curves_sim_freq])  # Curves[0]=sim_spectra; [1]sim_freqs; [2]emp_spectra; [3]emp_freqs
-    if it == 0:   # in the first iteration save empirical spectra and freqs
-        history["curves_emp"] = curves_emp
+        # d_cost, d_pw = cost_derivative(history)  # Stop mechanism when max pw fit is achieved; after that undesired gamma peak appears. Avoid this.
+        # cost_fft[np.where((d_cost > 0) & (d_pw <= 0))] = - cost_fft[np.where((d_cost > 0) & (d_pw <= 0))]
+        if fit_method == "peak_balance":
+            cost_fft = cost_fft - cost_fft_gamma
+        theta[SC_cortex_idx] = theta[SC_cortex_idx] - (1/len(w)) * learning_rate * cost_fft  # len(w) as "m"
 
-    # d_cost, d_pw = cost_derivative(history)  # Stop mechanism when max pw fit is achieved; after that undesired gamma peak appears. Avoid this.
-    # cost_fft[np.where((d_cost > 0) & (d_pw <= 0))] = - cost_fft[np.where((d_cost > 0) & (d_pw <= 0))]
-    if fit_method == "peak_balance":
-        cost_fft = cost_fft - cost_fft_gamma
-    theta = theta - (1/len(w)) * learning_rate * cost_fft  # len(w) as "m"
+        theta[theta <= 0] = 0
+        theta[theta >= 1] = 1
 
-    theta[theta <= 0] = 0
-    theta[theta >= 1] = 1
+        individual[2] = theta
 
-    individual[2] = theta
+        print(' cost %0.2f  -  time: %0.2f/%0.2f min' % (np.average(np.abs(cost_fft)), (time.time()-tic)/60, (time.time()-tic0)/60, ))
 
-    print(' cost %0.2f  -  time: %0.2f/%0.2f min' % (np.average(np.abs(cost_fft)), (time.time()-tic)/60, (time.time()-tic0)/60, ))
+        if (it > 1) & (it % dyn_check != 0) & (it % check_point == 0):
+            show_evolution(history, regionLabels, report_rois, params["emp_subj"]+name, output_folder)
+        elif (it > 1) & (it % dyn_check == 0) & (it % check_point == 0):
+            show_evolution(history, regionLabels, report_rois, params["emp_subj"]+name, output_folder, show=["report", "dynFFT", "dynW"])
 
-    if (it > 1) & (it % dyn_check != 0) & (it % check_point == 0):
-        show_evolution(history, regionLabels, report_rois, name, output_folder)
-    elif (it > 1) & (it % dyn_check == 0) & (it % check_point == 0):
-        show_evolution(history, regionLabels, report_rois, name, output_folder, show=["report", "dynFFT", "dynW"])
+    ## Save important data  ## To load it back: open(file, 'r') as f; pickle.load()
+    file_params = open(output_folder + params["emp_subj"] + name + "_params.pkl", "wb")
+    pickle.dump(params, file_params)
+    file_params.close()
 
-## Save important data  ## To load it back: open(file, 'r') as f; pickle.load()
-file_params = open(output_folder + name + "_params.pkl", "wb")
-pickle.dump(params, file_params)
-file_params.close()
+    file_history = open(output_folder + params["emp_subj"] + name + "_history.pkl", "wb")
+    pickle.dump(history, file_history)
+    file_history.close()
 
-file_history = open(output_folder + name + "_history.pkl", "wb")
-pickle.dump(history, file_history)
-file_history.close()
+    ## TO LOAD BACK:
+    # with open("heterogeneity/Gradient_results/GD_d11m11y2021-t13h20m_history.pkl", 'rb') as f:
+    #     history = pickle.load(f)
 
-## TO LOAD BACK:
-# with open("heterogeneity/Gradient_results/GD_d11m11y2021-t13h20m_history.pkl", 'rb') as f:
-#     history = pickle.load(f)
+    ## Applying retrospective approach to get best w combination
+    # Maximizing rFC and minimizing FFT cost.
+    top_n = 10  # Top results to check
+    transient = 10  # Initial iterations where fc and cost rapidly shrinks
 
-## Applying retrospective approach to get best w combination
-# Maximizing rFC and minimizing FFT cost.
-top_n = 10  # Top results to check
-transient = 10  # Initial iterations where fc and cost rapidly shrinks
+    avgFC_history = np.average(np.asarray(history["fc"])[transient:, :], axis=1)  # 10 iterations to remove initial FC decay and high cost
+    avgCost_history = np.average(np.asarray(history["cost"])[transient:, 0, :], axis=1)
 
-avgFC_history = np.average(np.asarray(history["fc"])[transient:, :], axis=1)  # 10 iterations to remove initial FC decay and high cost
-avgCost_history = np.average(np.asarray(history["cost"])[transient:, 0, :], axis=1)
+    # Look for iterations where FC is maximized - Extract to 10
+    top_iterations_short = np.argsort(avgFC_history)[-10:]
+    top_iterations, top_fc, top_cost, top_w = top_iterations_short + transient, avgFC_history[top_iterations_short], avgCost_history[top_iterations_short], np.asarray(history["theta"])[top_iterations_short]
 
-# Look for iterations where FC is maximized - Extract to 10
-top_iterations_short = np.argsort(avgFC_history)[-10:]
-top_iterations, top_fc, top_cost, top_w = top_iterations_short + transient, avgFC_history[top_iterations_short], avgCost_history[top_iterations_short], np.asarray(history["theta"])[top_iterations_short]
+    # Then use minimum cost - as control.
+    best_fc, best_cost, best_w, best_iteration_short, best_iteration = \
+        top_fc[np.argmax(top_fc)], top_cost[np.argmax(top_fc)], top_w[np.argmax(top_fc)], top_iterations_short[np.argmax(top_fc)], top_iterations[np.argmax(top_fc)]
 
-# Then use minimum cost - as control.
-best_fc, best_cost, best_w, best_iteration_short, best_iteration = \
-    top_fc[np.argmax(top_fc)], top_cost[np.argmax(top_fc)], top_w[np.argmax(top_fc)], top_iterations_short[np.argmax(top_fc)], top_iterations[np.argmax(top_fc)]
+    ## Save important data  ## To load it back: open(file, 'r') as f; pickle.load()
+    file_params = open(output_folder + params["emp_subj"] + name + "_best.pkl", "wb")
+    bests = [best_fc, best_cost, best_w, best_iteration_short, best_iteration]
+    pickle.dump(bests, file_params)
+    file_params.close()
 
-# Left rois full report
-report_rois = np.arange(0, len(regionLabels), 4)
-show_evolution(history, regionLabels, report_rois, name, output_folder, show=["dynFFT", "dynW"])
-# Right rois full report
-report_rois = np.arange(1, len(regionLabels), 2)
-show_evolution(history, regionLabels, report_rois, name, output_folder, show=["dynFFT", "dynW"])
+    # Left rois full report
+    report_rois = np.arange(0, len(regionLabels), 4)
+    show_evolution(history, regionLabels, report_rois, name, output_folder, show=["dynFFT", "dynW"])
+    # Right rois full report
+    report_rois = np.arange(1, len(regionLabels), 2)
+    show_evolution(history, regionLabels, report_rois, name, output_folder, show=["dynFFT", "dynW"])
 
 
 ###### MORE plots

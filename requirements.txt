@@ -15,7 +15,7 @@ scikit-learn
 statsmodels
 mpi4py
 fooof
-
+communities
 ## REMEMBER (for stimulation): I'm using a modified version of "tvb/datatypes/equations.py".
 # Also a new script for JRD2003 model in "tvb/simulator/models/jansen_rit_david_mine.py"
 # A modified veresion of coupling with a new sigmoidal for JRD2003 model.
@@ -26,7 +26,7 @@ fooof
 
 ## ON DEVELOPMENT: toolbox is a local package - to import its functions use:
 # import sys
-# sys.path.append("D:\\Users\Jesus CabreraAlvarez\PycharmProjects\\")  # temporal append
+# sys.path.append("E:\\LCCN_Local\PycharmProjects\\")  # temporal append
 # from toolbox.signals import timeseriesPlot
 # from toolbox.fft import FFTplot, FFTpeaks
 
