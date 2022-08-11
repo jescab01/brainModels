@@ -117,8 +117,8 @@ class Coupling(HasTraits):
 
     def __call__(self, step, history):
         g_ij = history.es_weights  # dims=(to, ncv, from) - all levels of ncv are the same.
-        # I dont know why that dimesion is created in the first place.
-        x_i, x_j = history.query(step)
+        # I dont know why that dimension is created in the first place.
+        x_i, x_j = history.query(step)  # x_i (state); x_j (delayed coupling [to,cvar,from,mode])
         x_i = x_i[numpy.newaxis].transpose((2, 1, 0, 3))  # (to, ncv, from, m)
         pre = self.pre(x_i, x_j)
         sum = (g_ij * pre).sum(axis=2)  # (to, ncv, m)
@@ -345,7 +345,7 @@ class SigmoidalJansenRit(Coupling):
         domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
         doc="Midpoint of the linear portion of the sigmoid",)
 
-    r  = NArray(
+    r = NArray(
         label=r":math:`r`",
         default=numpy.array([1.0,]),
         domain=Range(lo=0.01, hi=1000.0, step=10.0),
@@ -366,6 +366,139 @@ class SigmoidalJansenRit(Coupling):
 
     def post(self, gx):
         return self.a * gx
+
+
+class SigmoidalWedling(Coupling):
+    r"""
+    Provides a sigmoidal coupling function as described in the
+    Jansen and Rit model, of the following form
+
+    .. math::
+        c_{min} + (c_{max} - c_{min}) / (1.0 + \exp(-a(x-midpoint)/\sigma))
+
+    Assumes that x has have two state variables.
+
+    """
+
+    cmin = NArray(
+        label=":math:`c_{min}`",
+        default=numpy.array([0.0,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Minimum of the sigmoid function",)
+
+    cmax = NArray(
+        label=":math:`c_{max}`",
+        default=numpy.array([2.0 * 0.0025,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Maximum of the sigmoid function",)
+
+    midpoint = NArray(
+        label="midpoint",
+        default=numpy.array([6.0,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Midpoint of the linear portion of the sigmoid",)
+
+    r = NArray(
+        label=r":math:`r`",
+        default=numpy.array([1.0,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="the steepness of the sigmoidal transformation",)
+
+    a = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Scaling of the coupling term",)
+
+    def __str__(self):
+        return simple_gen_astr(self, 'cmin cmax midpoint a r')
+
+    def pre(self, x_i, x_j):
+        pre = self.cmax / (1.0 + numpy.exp(self.r * (self.midpoint - (x_j[:, 0] - x_j[:, 1] - x_j[:, 2]))))
+        return pre[:, numpy.newaxis]
+
+    def post(self, gx):
+        return self.a * gx
+
+
+class SigmoidalJansenRit_Linear(Coupling):
+    r"""
+    Provides a sigmoidal coupling function as described in the
+    Jansen and Rit model, of the following form
+
+    .. math::
+        c_{min} + (c_{max} - c_{min}) / (1.0 + \exp(-a(x-midpoint)/\sigma))
+
+    Assumes that x has have two state variables.
+
+    """
+
+    e0 = NArray(
+        label=":math:`e0`",
+        default=numpy.array([0.005,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Maximum of the sigmoid function",)
+
+    v0 = NArray(
+        label=":math:`v0`",
+        default=numpy.array([6.0,]),
+        domain=Range(lo=3.12, hi=6.0, step=0.02),
+        doc = """Firing threshold (PSP) for which a 50% firing rate is achieved.
+            In other words, it is the value of the average membrane potential
+            corresponding to the inflection point of the sigmoid [mV]; 
+            6.0 in JansenRit1995 and DavidFriston2003""")
+
+    r  = NArray(
+        label=r":math:`r`",
+        default=numpy.array([1.0,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Steepness of the sigmoidal transformation [mV^-1]",)
+
+
+    a = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Scaling of the coupling term",)
+
+
+    a_linear = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Scaling of the coupling term",)
+
+    jrMask_wc = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="mask for jr|wc nodes",)
+
+    def __str__(self):
+        return simple_gen_astr(self, 'cmin cmax midpoint a r')
+
+    def pre(self, x_i, x_j):
+
+        # Modified on 11-Oct-2021: numpy.squeeze so that a vector of shape (22,1) can be multiplied to a matrix (22, 22)
+        # when w is a heterogeneous parameter. Before squeezing matrix is (22, 22, 1) which is not possible to multiply.
+        pre = x_j
+        
+        jr_mask = numpy.squeeze(self.jrMask_wc==1)
+        
+        # Jansen-Rit coupling
+        sum_vExc_vInh = numpy.squeeze((x_j[:, 0] - x_j[:, 1]))
+        pre[:, 0, jr_mask, :] = self.a * self.e0 / (1.0 + numpy.exp(self.r * (self.v0 - sum_vExc_vInh[:, jr_mask, numpy.newaxis])))
+
+        # Wilson-cowan afferences
+        pre[:, 0, numpy.invert(jr_mask), :] = self.a_linear * x_j[:, 2, numpy.invert(jr_mask)]
+
+
+
+        return pre
+
+    def post(self, gx):
+
+        return gx
 
 
 class SigmoidalJansenRitDavid(Coupling):
@@ -429,6 +562,87 @@ class SigmoidalJansenRitDavid(Coupling):
             pre = self.e0 / (1.0 + numpy.exp(self.r * (self.v0 - sum_vExc_vInh)))
 
         return pre[:, numpy.newaxis]
+
+    def post(self, gx):
+        return self.a * gx
+
+
+class SigmoidalJansenRit1995_David2003_cosimulation(Coupling):
+    r"""
+    Provides a sigmoidal coupling function as described in the
+    Jansen and Rit model, of the following form
+
+    .. math::
+        c_{min} + (c_{max} - c_{min}) / (1.0 + \exp(-a(x-midpoint)/\sigma))
+
+    Assumes that x has have two state variables.
+
+    And a second coupling for David nodes.
+
+    """
+
+    e0 = NArray(
+        label=":math:`e0`",
+        default=numpy.array([0.005, ]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Maximum of the sigmoid function", )
+
+    v0 = NArray(
+        label=":math:`v0`",
+        default=numpy.array([6.0, ]),
+        domain=Range(lo=3.12, hi=6.0, step=0.02),
+        doc="""Firing threshold (PSP) for which a 50% firing rate is achieved.
+            In other words, it is the value of the average membrane potential
+            corresponding to the inflection point of the sigmoid [mV]; 
+            6.0 in JansenRit1995 and DavidFriston2003""")
+
+    r = NArray(
+        label=r":math:`r`",
+        default=numpy.array([1.0, ]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Steepness of the sigmoidal transformation [mV^-1]", )
+
+    a = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56, ]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Scaling of the coupling term", )
+
+    w = NArray(
+        label=r":math:`w`",
+        default=numpy.array([0.8]),
+        domain=Range(lo=0., hi=1.0, step=0.05),
+        doc="""Relative proportion of each kinectic population in the cortical area. 
+        Multiplies population 1; (1-w)*population 2""")
+
+    jrMask_d = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56, ]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="mask for jr|d nodes", )
+
+
+    def __str__(self):
+        return simple_gen_astr(self, 'cmin cmax midpoint a r')
+
+    def pre(self, x_i, x_j):
+        # Modified on 11-Oct-2021: numpy.squeeze so that a vector of shape (22,1) can be multiplied to a matrix (22, 22)
+        # when w is a heterogeneous parameter. Before squeezing matrix is (22, 22, 1) which is not possible to multiply.
+        pre = x_j
+
+        # Jansen-Rit coupling
+        jr_mask = numpy.squeeze(self.jrMask_d == 1)
+        sum_vExc_vInh_jr = numpy.squeeze((x_j[:, 4] - x_j[:, 5]))
+        pre[:, 0, jr_mask, :] = self.e0 / (1.0 + numpy.exp(self.r * (self.v0 - sum_vExc_vInh_jr[:, jr_mask, numpy.newaxis])))
+
+        # David coupling
+        d_mask = numpy.squeeze(self.jrMask_d == 0)
+        sum_vExc_vInh_d = numpy.squeeze(self.w * (x_j[:, 0] - x_j[:, 1]) + (1 - self.w) * (x_j[:, 2] - x_j[:, 3]))
+        pre[:, 0, d_mask, :] = self.e0 / (1.0 + numpy.exp(self.r * (self.v0 - sum_vExc_vInh_d[:, d_mask, numpy.newaxis])))
+
+        return pre
+
+
 
     def post(self, gx):
         return self.a * gx

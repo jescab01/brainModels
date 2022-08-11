@@ -242,6 +242,97 @@ class GeneralizedSigmoid(TemporalApplicableEquation):
     #"pi": numpy.pi})
 
 
+class DC(TemporalApplicableEquation):
+    """
+    Direct current to be used as stimulation
+    """
+
+    equation = Final(
+        label="DC Equation",
+        default="dc_offset",
+        doc="""Simple: dc-offset summed up to the ROI's signal""")
+
+    parameters = Attr(
+        field_type=dict,
+        label="DC Parameters",
+        default=lambda: {"dc_offset": 1.0, "t_start": 10.0, "t_end": 100.0})
+
+    def evaluate(self, var):
+        """
+        Generate a discrete representation of the equation for the space
+        represented by ``var``.
+
+        The argument ``var`` can represent a distance, or effective distance,
+        for each node in a simulation. Or a time, or in principle any arbitrary
+        `` space ``. ``var`` can be a single number, a numpy.ndarray or a
+        ?scipy.sparse_matrix? TODO: think this last one is true, need to check
+        as we need it for LocalConnectivity...
+
+        """
+        # rolling in the deep ...
+        t_start = self.parameters["t_start"]
+        t_end = self.parameters["t_end"]
+
+        # When we call the method from the main script var (i.e. time) comes with one dimension;
+        # But when the method is called from inside the simulator var comes with two dimensions.
+        var = numpy.squeeze(var)
+
+        off = numpy.invert((t_start < var) & (var < t_end))
+
+        _pattern = numpy.ones(var.shape[0]) * self.parameters["dc_offset"]
+        _pattern = _pattern[numpy.newaxis, :]
+
+        _pattern[:, off] = 0.0
+
+        return _pattern
+
+
+class Noise(TemporalApplicableEquation):
+    """
+    White Noise to be used as stimulation
+    """
+
+    equation = Final(
+        label="Noise Equation",
+        default="np.rand.normal(mean, std, samples)",
+        doc="""np.rand.normal(mean, std, samples)""")
+
+    parameters = Attr(
+        field_type=dict,
+        label="Noise Parameters",
+        default=lambda: {"mean": 1.0, "std": 10.0, "onset": 100.0, "offset":400.0}) #kHz #"pi": numpy.pi,
+
+
+    def evaluate(self, var):
+        """
+        Generate a discrete representation of the equation for the space
+        represented by ``var``.
+
+        The argument ``var`` can represent a distance, or effective distance,
+        for each node in a simulation. Or a time, or in principle any arbitrary
+        `` space ``. ``var`` can be a single number, a numpy.ndarray or a
+        ?scipy.sparse_matrix? TODO: think this last one is true, need to check
+        as we need it for LocalConnectivity...
+
+        """
+        # rolling in the deep ...
+        onset = self.parameters["onset"]
+        offset = self.parameters["offset"]
+
+        # When we call the method from the main script var (i.e. time) comes with one dimension;
+        # But when the method is called from inside the simulator var comes with two dimensions.
+        var = numpy.squeeze(var)
+
+        off = numpy.invert((onset < var) & (var < offset))
+
+        _pattern = numpy.random.normal(self.parameters["mean"], self.parameters["std"], var.shape[0]) 
+        _pattern = _pattern[numpy.newaxis, :]
+            
+        _pattern[:, off] = 0.0
+
+        return _pattern
+
+
 class Sinusoid(TemporalApplicableEquation):
     """
     A Sinusoid equation.
