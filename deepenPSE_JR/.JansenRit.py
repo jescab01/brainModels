@@ -1,3 +1,4 @@
+
 import os
 import time
 import subprocess
@@ -8,19 +9,25 @@ import pandas as pd
 import scipy.stats
 
 from tvb.simulator.lab import *
+from tvb.simulator.models.jansen_rit_david_mine import JansenRit1995
 from mne import time_frequency, filter
 import plotly.graph_objects as go  # for data visualisation
 import plotly.io as pio
-from toolbox import timeseriesPlot, FFTplot, FFTpeaks, AEC, PLV, PLI, epochingTool, paramSpace
+# from toolbox import timeseriesPlot, FFTplot, FFTpeaks, AEC, PLV, PLI, epochingTool, paramSpace
+
+import sys
+sys.path.append("E:\\LCCN_Local\PycharmProjects\\")
+from toolbox.signals import timeseriesPlot, epochingTool
+from toolbox.fc import PLV
+from toolbox.fft import FFTpeaks
+
 
 # This simulation will generate FC for a virtual "Subject".
 # Define identifier (i.e. could be 0,1,11,12,...)
 subjectid = ".1995JansenRit"
 wd = os.getcwd()
 main_folder=wd+"\\"+subjectid
-ctb_folder=wd+"\\CTB_data\\output\\"
-
-emp_subj = "subj04"
+ctb_folder = "E:\\LCCN_Local\\PycharmProjects\\CTB_data2\\"
 
 # Prepare bimodality test (i.e. Hartigans' dip test in an external R script via python subprocess
 # Build subprocess command: [Rscript, script]
@@ -31,9 +38,9 @@ tic0 = time.time()
 
 simLength = 5000  # ms - relatively long simulation to be able to check for power distribution
 samplingFreq = 1000  #Hz
-transient = 0  # ms to exclude from timeseries due to initial transient
+transient = 1000  # ms to exclude from timeseries due to initial transient
 
-conn = connectivity.Connectivity.from_file(ctb_folder+"AVG_NEMOS_acc.zip")
+conn = connectivity.Connectivity.from_file(ctb_folder+"NEMOS_035_AAL2.zip")
 conn.weights = conn.scaled_weights(mode="tract")
 
 m = models.JansenRit(A=np.array([3.25]), B=np.array([22]), J=np.array([1]),

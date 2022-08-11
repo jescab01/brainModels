@@ -13,7 +13,11 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go  # for data visualisation
 import plotly.io as pio
 
-from toolbox import timeseriesPlot, FFTplot, FFTpeaks, AEC, PLV, PLI, epochingTool, paramSpace
+import sys
+sys.path.append("E:\\LCCN_Local\PycharmProjects\\")  # temporal append
+from toolbox.signals import timeseriesPlot, epochingTool
+from toolbox.fc import PLV
+
 from tvb.simulator.models.jansen_rit_david_mine import JansenRitDavid2003_N
 
 
@@ -21,9 +25,9 @@ from tvb.simulator.models.jansen_rit_david_mine import JansenRitDavid2003_N
 # and the connectome to use from the available subjects
 subjectid = ".2003JansenRitDavid_N"
 emp_subj = "NEMOS_035"
-test = "p_CB"
+test = "p_WN"
 
-ctb_folder = "D:\\Users\Jesus CabreraAlvarez\PycharmProjects\\brainModels\\CTB_data\\output\\"
+ctb_folder = "E:\\LCCN_Local\PycharmProjects\\CTB_data2\\"
 
 main_folder = os.getcwd() + "\\"+"PSE"
 if os.path.isdir(main_folder) == False:
@@ -36,20 +40,57 @@ os.mkdir(specific_folder)
 simLength = 10 * 1000 # ms
 samplingFreq = 1000 #Hz
 transient = 2000 #ms
-n_rep = 3
+
 
 # integrator: dt=T(ms)=1000/samplingFreq(kHz)=1/samplingFreq(HZ)
 # integrator = integrators.HeunStochastic(dt=1000/samplingFreq, noise=noise.Additive(nsig=np.array([5e-6])))
 integrator = integrators.HeunDeterministic(dt=1000/samplingFreq)
 
-
-conn = connectivity.Connectivity.from_file(ctb_folder+emp_subj+"_AAL2red.zip")
+conn = connectivity.Connectivity.from_file(ctb_folder+emp_subj+"_AAL2.zip")
 conn.weights = conn.scaled_weights(mode="tract")
 
-CB_rois = [18, 19, 32, 33, 34, 35, 38, 39, 40, 41, 42, 43, 44, 45, 62, 63, 64, 65, 70, 71, 76, 77]
-conn.weights = conn.weights[:, CB_rois][CB_rois]
-conn.tract_lengths = conn.tract_lengths[:, CB_rois][CB_rois]
-conn.region_labels = conn.region_labels[CB_rois]
+# Define regions implicated in Functional analysis: remove  Cerebelum, Thalamus, Caudate (i.e. subcorticals)
+cortical_rois = ['Precentral_L', 'Precentral_R', 'Frontal_Sup_2_L',
+                 'Frontal_Sup_2_R', 'Frontal_Mid_2_L', 'Frontal_Mid_2_R',
+                 'Frontal_Inf_Oper_L', 'Frontal_Inf_Oper_R', 'Frontal_Inf_Tri_L',
+                 'Frontal_Inf_Tri_R', 'Frontal_Inf_Orb_2_L', 'Frontal_Inf_Orb_2_R',
+                 'Rolandic_Oper_L', 'Rolandic_Oper_R', 'Supp_Motor_Area_L',
+                 'Supp_Motor_Area_R', 'Olfactory_L', 'Olfactory_R',
+                 'Frontal_Sup_Medial_L', 'Frontal_Sup_Medial_R',
+                 'Frontal_Med_Orb_L', 'Frontal_Med_Orb_R', 'Rectus_L', 'Rectus_R',
+                 'OFCmed_L', 'OFCmed_R', 'OFCant_L', 'OFCant_R', 'OFCpost_L',
+                 'OFCpost_R', 'OFClat_L', 'OFClat_R', 'Insula_L', 'Insula_R',
+                 'Cingulate_Ant_L', 'Cingulate_Ant_R', 'Cingulate_Mid_L',
+                 'Cingulate_Mid_R', 'Cingulate_Post_L', 'Cingulate_Post_R',
+                 'Hippocampus_L', 'Hippocampus_R', 'ParaHippocampal_L',
+                 'ParaHippocampal_R', 'Calcarine_L',
+                 'Calcarine_R', 'Cuneus_L', 'Cuneus_R', 'Lingual_L', 'Lingual_R',
+                 'Occipital_Sup_L', 'Occipital_Sup_R', 'Occipital_Mid_L',
+                 'Occipital_Mid_R', 'Occipital_Inf_L', 'Occipital_Inf_R',
+                 'Fusiform_L', 'Fusiform_R', 'Postcentral_L', 'Postcentral_R',
+                 'Parietal_Sup_L', 'Parietal_Sup_R', 'Parietal_Inf_L',
+                 'Parietal_Inf_R', 'SupraMarginal_L', 'SupraMarginal_R',
+                 'Angular_L', 'Angular_R', 'Precuneus_L', 'Precuneus_R',
+                 'Paracentral_Lobule_L', 'Paracentral_Lobule_R', 'Heschl_L', 'Heschl_R',
+                 'Temporal_Sup_L', 'Temporal_Sup_R', 'Temporal_Pole_Sup_L',
+                 'Temporal_Pole_Sup_R', 'Temporal_Mid_L', 'Temporal_Mid_R',
+                 'Temporal_Pole_Mid_L', 'Temporal_Pole_Mid_R', 'Temporal_Inf_L',
+                 'Temporal_Inf_R']
+cingulum_rois = ['Frontal_Mid_2_L', 'Frontal_Mid_2_R',
+                 'Insula_L', 'Insula_R',
+                 'Cingulate_Ant_L', 'Cingulate_Ant_R', 'Cingulate_Post_L', 'Cingulate_Post_R',
+                 'Hippocampus_L', 'Hippocampus_R', 'ParaHippocampal_L',
+                 'ParaHippocampal_R', 'Amygdala_L', 'Amygdala_R',
+                 'Parietal_Sup_L', 'Parietal_Sup_R', 'Parietal_Inf_L',
+                 'Parietal_Inf_R', 'Precuneus_L', 'Precuneus_R',
+                 'Thalamus_L', 'Thalamus_R']
+
+# load text with FC rois; check if match SC
+FClabs = list(np.loadtxt(ctb_folder + "FCrms_" + emp_subj + "/roi_labels_rms.txt", dtype=str))
+FC_cortex_idx = [FClabs.index(roi) for roi in
+                 cortical_rois]  # find indexes in FClabs that matches cortical_rois
+SClabs = list(conn.region_labels)
+SC_cortex_idx = [SClabs.index(roi) for roi in cortical_rois]
 
 mon = (monitors.Raw(),)
 
@@ -61,14 +102,11 @@ results_fc = list()
 
 for g in coupling_vals:
     for p in input_vals:
-        for th in ["p", "p+0.22", "0.22"]:
+
+            th = 0.22
+
             # Construct p array
-            if th == "p":
-                p_array = np.array([p]*len(conn.region_labels))
-            elif th == "p+0.22":
-                p_array = np.where((conn.region_labels == 'Thalamus_R') | (conn.region_labels == 'Thalamus_L'), p + 0.22, p)
-            elif th == "0.22":
-                p_array = np.where((conn.region_labels == 'Thalamus_R') | (conn.region_labels == 'Thalamus_L'), 0.22, p)
+            p_array = np.where((conn.region_labels == 'Thalamus_R') | (conn.region_labels == 'Thalamus_L'), th, p)
 
             sigma_array = np.where((conn.region_labels == 'Thalamus_R') | (conn.region_labels == 'Thalamus_L'), 0.022, 0)
 
@@ -98,8 +136,9 @@ for g in coupling_vals:
 
             # Extract data: "output[a][b][:,0,:,0].T" where:
             # a=monitorIndex, b=(data:1,time:0) and [200:,0,:,0].T arranges channel x timepoints and to remove initial transient.
-            raw_data = output[0][1][transient:, 0, :, 0].T
-            # raw_time = output[0][0][transient:]
+            raw_data = m.w * (output[0][1][transient:, 0, :, 0].T - output[0][1][transient:, 1, :, 0].T) + \
+                       (1 - m.w) * (output[0][1][transient:, 3, :, 0].T - output[0][1][transient:, 4, :, 0].T)
+            raw_data = raw_data[SC_cortex_idx, :]
 
             mean = np.average(np.average(raw_data, axis=1))
             sd = np.average(np.std(raw_data, axis=1))
@@ -144,12 +183,14 @@ for g in coupling_vals:
                 # np.savetxt(fname, plv)
 
                 # Load empirical data to make simple comparisons
-                plv_emp = np.loadtxt(ctb_folder + "FC_" + emp_subj + "/" + bands[0][b] + "_plv.txt")[:, CB_rois][CB_rois]
+                plv_emp = \
+                    np.loadtxt(ctb_folder + "FCrms_" + emp_subj + "/" + bands[0][b] + "_plv_rms.txt", delimiter=',')[:,
+                    FC_cortex_idx][FC_cortex_idx]
 
                 # Comparisons
-                t1 = np.zeros(shape=(2, len(conn.region_labels) ** 2 // 2 - len(conn.region_labels) // 2))
-                t1[0, :] = plv[np.triu_indices(len(conn.region_labels), 1)]
-                t1[1, :] = plv_emp[np.triu_indices(len(conn.region_labels), 1)]
+                t1 = np.zeros(shape=(2, len(plv) ** 2 // 2 - len(plv) // 2))
+                t1[0, :] = plv[np.triu_indices(len(plv), 1)]
+                t1[1, :] = plv_emp[np.triu_indices(len(plv), 1)]
                 plv_r = np.corrcoef(t1)[0, 1]
                 newRow.append(plv_r)
 
@@ -173,26 +214,24 @@ df_fc.to_csv(specific_folder+"/PSE_FC"+simname+".csv", index=False)
 # df_sd = df.groupby(["g", "p", "th"])[["g", "p", "th", "Alpha"]].std().reset_index()
 
 
-fig = make_subplots(rows=1, cols=6, subplot_titles=("Signal std - th = p", "rFC - th = p",
-                                                    "Signal std - th = p + 0.22", "rFC - th = p + 0.22",
-                                                    "Signal std - th = 0.22", "rFC - th = 0.22"),
-                    specs=[[{}, {}, {}, {}, {}, {}]], shared_yaxes=True, shared_xaxes=True,
+fig = make_subplots(rows=1, cols=2, subplot_titles=("Signal std", "rFC"),
+                    specs=[[{}, {}]], shared_yaxes=True, shared_xaxes=True,
                     x_title="Input (p)", y_title="Coupling factor")
 
-df_subset = df_amp.loc[df_amp["th"] == "p"]
+df_subset = df_amp
 fig.add_trace(go.Heatmap(z=df_subset.amp_sd, x=df_subset.p, y=df_subset.g, colorscale='Viridis'), row=1, col=1)
-df_subset = df_fc.loc[df_fc["th"] == "p"]
+df_subset = df_fc
 fig.add_trace(go.Heatmap(z=df_subset.Alpha, x=df_subset.p, y=df_subset.g, colorscale='RdBu', reversescale=True, zmin=-0.5, zmax=0.5, showscale=False), row=1, col=2) # colorbar=dict(title="mV", thickness=10, x=1.02/4.3*2)
 
-df_subset = df_amp.loc[df_amp["th"] == "p+0.22"]
-fig.add_trace(go.Heatmap(z=df_subset.amp_sd, x=df_subset.p, y=df_subset.g, colorscale='Viridis'), row=1, col=3)
-df_subset = df_fc.loc[df_fc["th"] == "p+0.22"]
-fig.add_trace(go.Heatmap(z=df_subset.Alpha, x=df_subset.p, y=df_subset.g, colorscale='RdBu', reversescale=True, zmin=-0.5, zmax=0.5, showscale=False), row=1, col=4) # colorbar=dict(title="mV", thickness=10, x=1.02/4.3*2)
-
-df_subset = df_amp.loc[df_amp["th"] == "0.22"]
-fig.add_trace(go.Heatmap(z=df_subset.amp_sd, x=df_subset.p, y=df_subset.g, colorscale='Viridis'), row=1, col=5)
-df_subset = df_fc.loc[df_fc["th"] == "0.22"]
-fig.add_trace(go.Heatmap(z=df_subset.Alpha, x=df_subset.p, y=df_subset.g, colorscale='RdBu', reversescale=True, zmin=-0.5, zmax=0.5), row=1, col=6) # colorbar=dict(title="mV", thickness=10, x=1.02/4.3*2)
+# df_subset = df_amp.loc[df_amp["th"] == "p+0.22"]
+# fig.add_trace(go.Heatmap(z=df_subset.amp_sd, x=df_subset.p, y=df_subset.g, colorscale='Viridis'), row=1, col=3)
+# df_subset = df_fc.loc[df_fc["th"] == "p+0.22"]
+# fig.add_trace(go.Heatmap(z=df_subset.Alpha, x=df_subset.p, y=df_subset.g, colorscale='RdBu', reversescale=True, zmin=-0.5, zmax=0.5, showscale=False), row=1, col=4) # colorbar=dict(title="mV", thickness=10, x=1.02/4.3*2)
+#
+# df_subset = df_amp.loc[df_amp["th"] == "0.22"]
+# fig.add_trace(go.Heatmap(z=df_subset.amp_sd, x=df_subset.p, y=df_subset.g, colorscale='Viridis'), row=1, col=5)
+# df_subset = df_fc.loc[df_fc["th"] == "0.22"]
+# fig.add_trace(go.Heatmap(z=df_subset.Alpha, x=df_subset.p, y=df_subset.g, colorscale='RdBu', reversescale=True, zmin=-0.5, zmax=0.5), row=1, col=6) # colorbar=dict(title="mV", thickness=10, x=1.02/4.3*2)
 
 
 fig.update_layout(

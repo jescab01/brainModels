@@ -10,7 +10,12 @@ from tvb.simulator.lab import *
 from mne import time_frequency, filter
 import plotly.graph_objects as go  # for data visualisation
 import plotly.io as pio
-from toolbox import timeseriesPlot, FFTplot, FFTpeaks, PLV, epochingTool, paramSpace, AEC
+
+import sys
+sys.path.append("E:/LCCN_Local/PycharmProjects")
+from toolbox.signals import timeseriesPlot, epochingTool
+from toolbox.fc import PLV
+
 from plotly.subplots import make_subplots
 from communities.algorithms import louvain_method
 from sklearn.linear_model import LinearRegression
@@ -19,14 +24,14 @@ from sklearn.linear_model import LinearRegression
 # Define the name of the NMM to test
 # and the connectome to use from the available subjects
 subjectid = ".1995JansenRit"
-emp_subj = "AVG_NEMOS_CB"
+emp_subj = "NEMOS_035"
 
 wd = os.getcwd()
 main_folder = wd + "\\" + "PSE"
 if os.path.isdir(main_folder) == False:
     os.mkdir(main_folder)
 
-ctb_folder = "D:\\Users\\Jesus CabreraAlvarez\\PycharmProjects\\brainModels\\CTB_data\\output\\"
+ctb_folder = "E:\\LCCN_Local\\PycharmProjects\\CTB_data2\\"
 
 
 specific_folder = main_folder + "\\dynFC" + subjectid + "-" + emp_subj + "-" + time.strftime("m%md%dy%Y-t%Hh.%Mm.%Ss")
@@ -48,16 +53,54 @@ m = models.JansenRit(A=np.array([3.25]), B=np.array([22]), J=np.array([1]),
 # integrator = integrators.HeunStochastic(dt=1000/samplingFreq, noise=noise.Additive(nsig = np.array([1e-9]))) # between -8 and -9
 integrator = integrators.HeunDeterministic(dt=1000 / samplingFreq)
 
-conn = connectivity.Connectivity.from_file(ctb_folder + emp_subj + ".zip")
+conn = connectivity.Connectivity.from_file(ctb_folder + emp_subj + "_AAL2.zip")
 conn.weights = conn.scaled_weights(mode="tract")
 regionLabels = conn.region_labels
 
+# Define regions implicated in Functional analysis: remove  Cerebelum, Thalamus, Caudate (i.e. subcorticals)
+cortical_rois = ['Precentral_L', 'Precentral_R', 'Frontal_Sup_2_L',
+                 'Frontal_Sup_2_R', 'Frontal_Mid_2_L', 'Frontal_Mid_2_R',
+                 'Frontal_Inf_Oper_L', 'Frontal_Inf_Oper_R', 'Frontal_Inf_Tri_L',
+                 'Frontal_Inf_Tri_R', 'Frontal_Inf_Orb_2_L', 'Frontal_Inf_Orb_2_R',
+                 'Rolandic_Oper_L', 'Rolandic_Oper_R', 'Supp_Motor_Area_L',
+                 'Supp_Motor_Area_R', 'Olfactory_L', 'Olfactory_R',
+                 'Frontal_Sup_Medial_L', 'Frontal_Sup_Medial_R',
+                 'Frontal_Med_Orb_L', 'Frontal_Med_Orb_R', 'Rectus_L', 'Rectus_R',
+                 'OFCmed_L', 'OFCmed_R', 'OFCant_L', 'OFCant_R', 'OFCpost_L',
+                 'OFCpost_R', 'OFClat_L', 'OFClat_R', 'Insula_L', 'Insula_R',
+                 'Cingulate_Ant_L', 'Cingulate_Ant_R', 'Cingulate_Mid_L',
+                 'Cingulate_Mid_R', 'Cingulate_Post_L', 'Cingulate_Post_R',
+                 'Hippocampus_L', 'Hippocampus_R', 'ParaHippocampal_L',
+                 'ParaHippocampal_R', 'Calcarine_L',
+                 'Calcarine_R', 'Cuneus_L', 'Cuneus_R', 'Lingual_L', 'Lingual_R',
+                 'Occipital_Sup_L', 'Occipital_Sup_R', 'Occipital_Mid_L',
+                 'Occipital_Mid_R', 'Occipital_Inf_L', 'Occipital_Inf_R',
+                 'Fusiform_L', 'Fusiform_R', 'Postcentral_L', 'Postcentral_R',
+                 'Parietal_Sup_L', 'Parietal_Sup_R', 'Parietal_Inf_L',
+                 'Parietal_Inf_R', 'SupraMarginal_L', 'SupraMarginal_R',
+                 'Angular_L', 'Angular_R', 'Precuneus_L', 'Precuneus_R',
+                 'Paracentral_Lobule_L', 'Paracentral_Lobule_R', 'Heschl_L', 'Heschl_R',
+                 'Temporal_Sup_L', 'Temporal_Sup_R', 'Temporal_Pole_Sup_L',
+                 'Temporal_Pole_Sup_R', 'Temporal_Mid_L', 'Temporal_Mid_R',
+                 'Temporal_Pole_Mid_L', 'Temporal_Pole_Mid_R', 'Temporal_Inf_L',
+                 'Temporal_Inf_R']
+
+
+# load text with FC rois; check if match SC
+FClabs = list(np.loadtxt(ctb_folder + "FCrms_" + emp_subj + "/roi_labels_rms.txt", dtype=str))
+FC_cortex_idx = [FClabs.index(roi) for roi in
+                 cortical_rois]  # find indexes in FClabs that matches cortical_rois
+
+SClabs = list(conn.region_labels)
+SC_cortex_idx = [SClabs.index(roi) for roi in cortical_rois]
+
+
 # Load empirical FC data to make simple comparisons
-plv_emp = np.loadtxt(wd + "\\CTB_data\\output\\FC_" + emp_subj + "\\3-alpha_plv.txt")
+plv_emp = np.loadtxt(ctb_folder + "FCrms_" + emp_subj + "\\3-alpha_plv_rms.txt", delimiter=",")[:, FC_cortex_idx][FC_cortex_idx]
 # aec_emp = np.loadtxt(wd + "\\CTB_data\\output\\FC_" + emp_subj + "\\3-alpha_aec.txt")
 
-# Clustering for better visualization
-communs, frames = louvain_method(conn.weights)
+# # Clustering for better visualization
+communs, frames = louvain_method(plv_emp)
 indexes = [item for c in communs for item in c]
 PLVemp = plv_emp[:, indexes][indexes]
 # AECemp = aec_emp[:, indexes][indexes]
@@ -71,10 +114,8 @@ coupling_vals = np.arange(0, 120, 1)
 PLVsim = list()
 PLVr = list()
 
-
 # AECsim=list()
 # AECr=list()
-
 
 for g in coupling_vals:
 
@@ -92,9 +133,13 @@ for g in coupling_vals:
 
     # Extract data: "output[a][b][:,0,:,0].T" where:
     # a=monitorIndex, b=(data:1,time:0) and [200:,0,:,0].T arranges channel x timepoints and to remove initial transient.
-    raw_data = output[0][1][transient:, 0, indexes, 0].T
+    raw_data = output[0][1][transient:, 0, :, 0].T
+    raw_data = raw_data[SC_cortex_idx, :]  # Filter cortical rois
+    raw_data = raw_data[indexes, :]  # Match clustering order
+
     raw_time = output[0][0][transient:]
-    regionLabels = conn.region_labels[indexes]
+    regionLabels = conn.region_labels[SC_cortex_idx]
+
     # average signals to obtain mean signal frequency peak
     # data = np.asarray([np.average(raw_data, axis=0)])
     # data = np.concatenate((data, raw_data), axis=0)  # concatenate mean signal: data[0]; with raw_data: data[1:end]
@@ -146,9 +191,9 @@ for g in coupling_vals:
         # Comparisons
 
 
-        t1 = np.zeros(shape=(2, len(conn.region_labels) ** 2 // 2 - len(conn.region_labels) // 2))
-        t1[0, :] = plv_sim[np.triu_indices(len(conn.region_labels), 1)]
-        t1[1, :] = PLVemp[np.triu_indices(len(conn.region_labels), 1)]
+        t1 = np.zeros(shape=(2, len(plv_sim) ** 2 // 2 - len(plv_sim) // 2))
+        t1[0, :] = plv_sim[np.triu_indices(len(plv_sim), 1)]
+        t1[1, :] = PLVemp[np.triu_indices(len(plv_sim), 1)]
         plv_r = np.corrcoef(t1)[0, 1]
 
         # t3 = np.zeros(shape=(2, 2145))
@@ -301,7 +346,7 @@ def duoplot(emp_matrix, sim_matrix, matrix_r, matrix_rl, regionLabels, colors, t
               go.Scatter(x=emp_matrix[np.triu_indices(len(emp_matrix), 1)],
                          y=sim_matrix[k][np.triu_indices(len(emp_matrix), 1)], mode='markers',
                          marker=dict(color=colors)),  # update the second trace in (1,2) scatter plot
-              go.Scatter(x=[1], y=[1], text=["r = " + str(np.round(matrix_r[k], 4))], mode='text'),
+              go.Scatter(x=[1], y=[1], text=["r = " + str(np.round(matrix_r[k], 4)) + "<br>g = " + str(coupling_vals[k])], mode='text'),
               # update the trace in (1,2) Text - r= 0.3
               go.Scatter(x=np.linspace(0, 1, 100), y=matrix_rl[k], mode='lines', marker=dict(color='red')),
               ],

@@ -1,9 +1,10 @@
+
 import time
 import numpy as np
 import pandas as pd
 
 from tvb.simulator.lab import *
-from tvb.simulator.models.jansen_rit_david_mine import JansenRitDavid2003_N1, JansenRitDavid2003_N
+from tvb.simulator.models.jansen_rit_david_mine import JansenRitDavid2003
 import plotly.graph_objects as go  # for data visualisation
 import plotly.io as pio
 
@@ -11,26 +12,26 @@ import sys
 sys.path.append("E:\\LCCN_Local\PycharmProjects\\")  # temporal append
 from toolbox.signals import timeseriesPlot
 from toolbox.fft import FFTplot, FFTpeaks
-from toolbox import timeseriesPlot, FFTplot, FFTpeaks, multitapper
+# from toolbox import timeseriesPlot, FFTplot, FFTpeaks, multitapper
 
 # This simulation will generate FC for a virtual "Subject".
 # Define identifier (i.e. could be 0,1,11,12,...)
 subjectid = ".2003JansenRitDavid"
 wd = os.getcwd()
 main_folder = wd+"\\"+subjectid
-ctb_folder = wd+"\\CTB_data\\output\\"
+ctb_folder = "E:\\LCCN_Local\\PycharmProjects\\CTB_data2\\"
 
 emp_subj = "NEMOS_035"
-g, s = 112, 15
+g, s = 17, 12.5
 
 tic0 = time.time()
 
-samplingFreq = 1000 #Hz
-simLength = 10000 # ms - relatively long simulation to be able to check for power distribution
-transient = 2000 # seconds to exclude from timeseries due to initial transient
+samplingFreq = 1000  # Hz
+simLength = 10000  # ms - relatively long simulation to be able to check for power distribution
+transient = 2000  # seconds to exclude from timeseries due to initial transient
 
 
-conn = connectivity.Connectivity.from_file(ctb_folder+emp_subj+"_AAL2red.zip")
+conn = connectivity.Connectivity.from_file(ctb_folder+emp_subj+"_AAL2.zip")
 conn.weights = conn.scaled_weights(mode="tract")
 
 p_array = np.where((conn.region_labels == 'Thalamus_R') | (conn.region_labels == 'Thalamus_L'), 0, 0)
@@ -39,17 +40,17 @@ sigma_array = np.where((conn.region_labels == 'Thalamus_R') | (conn.region_label
 w = np.array([0.8] * len(conn.region_labels))
 
 # Parameters edited from David and Friston (2003).
-m = JansenRitDavid2003_N(He1=np.array([3.25]), Hi1=np.array([22]),  # SLOW population
-                         tau_e1=np.array([10.8]), tau_i1=np.array([22.0]),
+m = JansenRitDavid2003(He1=np.array([3.25]), Hi1=np.array([22]),  # SLOW population
+                         tau_e1=np.array([10]), tau_i1=np.array([16.0]),
 
                          He2=np.array([3.25]), Hi2=np.array([22]),  # FAST population
                          tau_e2=np.array([4.6]), tau_i2=np.array([2.9]),
 
-                         w=np.array([0.8]), c=np.array([135.0]),
+                         w=np.array([1]), c=np.array([135.0]),
                          c_pyr2exc=np.array([1.0]), c_exc2pyr=np.array([0.8]),
                          c_pyr2inh=np.array([0.25]), c_inh2pyr=np.array([0.25]),
                          v0=np.array([6.0]), e0=np.array([0.005]), r=np.array([0.56]),
-                         p=np.array([p_array]), sigma=np.array([sigma_array]))
+                         p=np.array([0.1085]), sigma=np.array([0]))
 
 # Remember to hold tau*H constant.
 m.He1, m.Hi1 = np.array([32.5 / m.tau_e1]), np.array([440 / m.tau_i1])
@@ -78,7 +79,7 @@ raw_time = output[0][0][transient:]
 regionLabels = conn.region_labels
 
 # Check initial transient and cut data
-timeseriesPlot(raw_data, raw_time, regionLabels, main_folder, mode="html")
+timeseriesPlot(raw_data, raw_time, regionLabels, mode="html")
 # Fourier Analysis plot
 fft = multitapper(raw_data, samplingFreq, regionLabels, 4, 4, 0.5, plot=True, peaks=True)
 
