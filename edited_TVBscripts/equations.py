@@ -287,7 +287,57 @@ class DC(TemporalApplicableEquation):
         return _pattern
 
 
-class Noise(TemporalApplicableEquation):
+class SO(TemporalApplicableEquation):
+    """
+    Direct current to be used as stimulation
+    """
+
+    equation = Final(
+        label="SO Equation",
+        default="Spontaneous activity :: Slow oscillations",
+        doc="""Simple: random activations summed up to the ROI's signal""")
+
+    parameters = Attr(
+        field_type=dict,
+        label="SO Parameters (in seconds)",
+        default=lambda: {"up_time": 1.08, "up_std": 0.38, "down_time": 3.44, "down_std": 1.37})
+
+
+    def evaluate(self, time, space):
+        """
+        Generate a discrete representation of the equation for the space
+        represented by ``var``.
+
+        The argument ``var`` can represent a distance, or effective distance,
+        for each node in a simulation. Or a time, or in principle any arbitrary
+        `` space ``. ``var`` can be a single number, a numpy.ndarray or a
+        ?scipy.sparse_matrix? TODO: think this last one is true, need to check
+        as we need it for LocalConnectivity...
+
+        """
+
+        # for each spatial node, create a time series of spontaneous activity
+        _pattern = numpy.zeros((space.size, time.size))
+
+        for i, node in enumerate(space):
+
+            temp = []
+
+            while len(temp) < time.size:
+
+                # TODO implement samplingFreq instead of * 1000 in the conversion from seconds to miliseconds
+                up = int(numpy.trunc(numpy.abs(numpy.random.normal(self.parameters["up_time"], self.parameters["up_std"]) * 1000)))
+                down = int(numpy.trunc(numpy.abs(numpy.random.normal(self.parameters["down_time"], self.parameters["down_std"]) * 1000)))
+
+                temp = temp + numpy.ones(up).tolist() + numpy.zeros(down).tolist()
+
+            _pattern[i, :] = temp[-time.size:]
+
+
+        return _pattern
+
+
+class WhiteNoise(TemporalApplicableEquation):
     """
     White Noise to be used as stimulation
     """
@@ -328,6 +378,70 @@ class Noise(TemporalApplicableEquation):
         _pattern = numpy.random.normal(self.parameters["mean"], self.parameters["std"], var.shape[0]) 
         _pattern = _pattern[numpy.newaxis, :]
             
+        _pattern[:, off] = 0.0
+
+        return _pattern
+
+
+class PinkNoise(TemporalApplicableEquation):
+    """
+    Pink Noise to be used as stimulation
+    """
+
+    equation = Final(
+        label="Noise Equation",
+        default="np.rand.normal(mean, std, samples)",
+        doc="""np.rand.normal(mean, std, samples)""")
+
+    parameters = Attr(
+        field_type=dict,
+        label="Noise Parameters",
+        default=lambda: {"gain": 10.0, "n_sources": 16.0, "onset": 100.0, "offset": 400.0})  # kHz #"pi": numpy.pi,
+
+    def evaluate(self, var):
+        """
+         Generate pink noise using the Voss-McCartney algorithm.
+
+        Generate a discrete representation of the equation for the space
+        represented by ``var``.
+
+        The argument ``var`` can represent a distance, or effective distance,
+        for each node in a simulation. Or a time, or in principle any arbitrary
+        `` space ``. ``var`` can be a single number, a numpy.ndarray or a
+        ?scipy.sparse_matrix? TODO: think this last one is true, need to check
+        as we need it for LocalConnectivity...
+
+        """
+        # rolling in the deep ...
+        onset = self.parameters["onset"]
+        offset = self.parameters["offset"]
+
+        # When we call the method from the main script var (i.e. time) comes with one dimension;
+        # But when the method is called from inside the simulator var comes with two dimensions.
+        var = numpy.squeeze(var)
+
+        off = numpy.invert((onset < var) & (var < offset))
+
+        # Create random sources
+        _pattern = numpy.random.randn(self.parameters["n_sources"], var.shape[0])
+
+        # Filter with decreasing coefficients
+        _pattern = numpy.cumsum(_pattern, axis=1)
+        _pattern = _pattern / (numpy.arange(self.parameters["n_sources"])[:, numpy.newaxis] + 1)
+
+        # Sum the sources
+        _pattern = _pattern.sum(axis=0)
+
+        # Normalize
+        _pattern = _pattern / numpy.max(numpy.abs(_pattern))
+
+        # demean
+        _pattern = _pattern - numpy.average(_pattern)
+
+        # Gain
+        _pattern = self.parameters["gain"] * _pattern
+
+        _pattern = _pattern[numpy.newaxis, :]
         _pattern[:, off] = 0.0
 
         return _pattern
@@ -494,7 +608,7 @@ class PulseTrain(TemporalApplicableEquation):
 
     parameters = Attr(
         field_type=dict,
-        default=lambda: {"T": 42.0, "tau": 13.0, "amp": 1.0, "onset": 30.0},
+        default=lambda: {"T": 42.0, "tau": 13.0, "amp": 1.0, "onset": 30.0,"offset":50.0},
         label="Pulse Train Parameters")
 
     def evaluate(self, var):
@@ -511,7 +625,8 @@ class PulseTrain(TemporalApplicableEquation):
         """
         # rolling in the deep ...
         onset = self.parameters["onset"]
-        off = var < onset
+        offset = self.parameters["offset"]
+        off = numpy.invert((onset < var) & (var < offset))
         var = numpy.roll(var, off.sum() + 1)
         var[..., off] = 0.0
         _pattern = numexpr.evaluate(self.equation, global_dict=self.parameters)

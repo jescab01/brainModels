@@ -25,9 +25,10 @@ from toolbox.fft import FFTpeaks
 # This simulation will generate FC for a virtual "Subject".
 # Define identifier (i.e. could be 0,1,11,12,...)
 subjectid = ".1995JansenRit"
+
 wd = os.getcwd()
-main_folder=wd+"\\"+subjectid
-ctb_folder = "E:\\LCCN_Local\\PycharmProjects\\CTB_data2\\"
+main_folder=wd + "\\" + subjectid
+ctb_folder = "E:\\LCCN_Local\\PycharmProjects\\CTB_data3\\"
 
 # Prepare bimodality test (i.e. Hartigans' dip test in an external R script via python subprocess
 # Build subprocess command: [Rscript, script]
@@ -40,7 +41,7 @@ simLength = 5000  # ms - relatively long simulation to be able to check for powe
 samplingFreq = 1000  #Hz
 transient = 1000  # ms to exclude from timeseries due to initial transient
 
-conn = connectivity.Connectivity.from_file(ctb_folder+"NEMOS_035_AAL2.zip")
+conn = connectivity.Connectivity.from_file(ctb_folder + "NEMOS_035_AAL2_pass.zip")
 conn.weights = conn.scaled_weights(mode="tract")
 
 m = models.JansenRit(A=np.array([3.25]), B=np.array([22]), J=np.array([1]),

@@ -368,7 +368,10 @@ class SigmoidalJansenRit(Coupling):
         return self.a * gx
 
 
-class SigmoidalWedling(Coupling):
+
+
+
+class SigmoidalJansenRit_Ntt(Coupling):
     r"""
     Provides a sigmoidal coupling function as described in the
     Jansen and Rit model, of the following form
@@ -410,15 +413,31 @@ class SigmoidalWedling(Coupling):
         domain=Range(lo=0.01, hi=1000.0, step=10.0),
         doc="Scaling of the coupling term",)
 
+    ntt_masks = NArray(
+        label=r":math:`ntt_ids`",
+        default=numpy.array([True,]),
+        domain=Range(lo=0, hi=1000, step=1),
+        doc="Mask for source neurotransmission ROIs",)
+
+    alpha = NArray(
+        label=r":math:`\alpha`",
+        default=numpy.array([0,]),
+        domain=Range(lo=0, hi=100, step=1),
+        doc="Neurotransmission scaling factor",)
+
     def __str__(self):
         return simple_gen_astr(self, 'cmin cmax midpoint a r')
 
     def pre(self, x_i, x_j):
-        pre = self.cmax / (1.0 + numpy.exp(self.r * (self.midpoint - (x_j[:, 0] - x_j[:, 1] - x_j[:, 2]))))
-        return pre[:, numpy.newaxis]
+        pre = (self.cmax / (1.0 + numpy.exp(self.r * (self.midpoint - (x_j[:, 0] - x_j[:, 1])))))[:, numpy.newaxis]
+        for i in range(len(self.ntt_masks)):
+            pre = numpy.concatenate((pre, (pre[:, 0, :, 0] * self.ntt_masks[i])[:, numpy.newaxis, :, numpy.newaxis]), axis=1)
+        return pre
 
     def post(self, gx):
-        return self.a * gx
+        gx[:, 0, 0] = gx[:, 0, 0] * self.a  # Global scaling
+        gx[:, 1:, 0] = gx[:, 1:, 0] * self.alpha  # Neurotransmission scaling
+        return gx
 
 
 class SigmoidalJansenRit_Linear(Coupling):
@@ -501,7 +520,293 @@ class SigmoidalJansenRit_Linear(Coupling):
         return gx
 
 
-class SigmoidalJansenRitDavid(Coupling):
+class SigmoidalJansenRit_hierarchical(Coupling):
+    r"""
+    Provides a sigmoidal coupling function as described in the
+    Jansen and Rit model, of the following form
+
+    .. math::
+        c_{min} + (c_{max} - c_{min}) / (1.0 + \exp(-a(x-midpoint)/\sigma))
+
+    Assumes that x has have two state variables.
+
+    """
+
+
+    e0 = NArray(
+        label=":math:`c_{max}`",
+        default=numpy.array([ 0.0025,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Maximum of the sigmoid function",)
+
+    v0 = NArray(
+        label="midpoint",
+        default=numpy.array([6.0,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Midpoint of the linear portion of the sigmoid",)
+
+    r = NArray(
+        label=r":math:`r`",
+        default=numpy.array([1.0,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="the steepness of the sigmoidal transformation",)
+
+    a = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Scaling of the coupling term",)
+
+    aF = NArray(
+        label=r":math:`aF`",
+        default=numpy.array([0.1]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: FeedForward
+         """)
+
+    aB = NArray(
+        label=r":math:`aB`",
+        default=numpy.array([0.2]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: FeedBack""")
+
+    aL = NArray(
+        label=r":math:`aL`",
+        default=numpy.array([0.05]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: Lateral""")
+
+    def __str__(self):
+        return simple_gen_astr(self, 'cmin cmax midpoint a r')
+
+    def pre(self, x_i, x_j):
+        # pre2 = (2 * self.e0) / (1.0 + numpy.exp(self.r * (self.v0 - (x_j[:, 0] - x_j[:, 1]))))
+
+        preFF = self.aF * numpy.squeeze(((2 * self.e0) / (1 + numpy.exp(self.r * ( self.v0 - (x_j[:, 0] - x_j[:, 1]))))))
+        preFB = self.aB * numpy.squeeze(((2 * self.e0) / (1 + numpy.exp(self.r * ( self.v0 - (x_j[:, 0] - x_j[:, 1]))))))
+        preL = self.aL * numpy.squeeze(((2 * self.e0) / (1 + numpy.exp(self.r * ( self.v0 - (x_j[:, 0] - x_j[:, 1]))))))
+        pre = numpy.transpose([preFF, preFB, preL], (1, 0,2))
+
+        return pre[:,:,:, numpy.newaxis]
+
+    def post(self, gx):
+        return self.a * gx
+
+
+
+class SigmoidalJansenRitDavid2005(Coupling):
+    r"""
+    Provides a sigmoidal coupling function as described in David 2005
+
+    .. math::
+        c_{min} + (c_{max} - c_{min}) / (1.0 + \exp(-a(x-midpoint)/\sigma))
+
+    Assumes that x has have two state variables.
+
+    """
+
+
+    e0 = NArray(
+        label=":math:`c_{max}`",
+        default=numpy.array([ 0.0025,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Maximum of the sigmoid function",)
+
+    v0 = NArray(
+        label="midpoint",
+        default=numpy.array([0,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Midpoint of the linear portion of the sigmoid",)
+
+    r = NArray(
+        label=r":math:`r`",
+        default=numpy.array([1.0,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="the steepness of the sigmoidal transformation",)
+
+    a = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Scaling of the coupling term",)
+
+    aF = NArray(
+        label=r":math:`aF`",
+        default=numpy.array([0.1]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: FeedForward
+         """)
+
+    aB = NArray(
+        label=r":math:`aB`",
+        default=numpy.array([0.2]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: FeedBack""")
+
+    aL = NArray(
+        label=r":math:`aL`",
+        default=numpy.array([0.05]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: Lateral""")
+
+    def __str__(self):
+        return simple_gen_astr(self, 'cmin cmax midpoint a r')
+
+    def pre(self, x_i, x_j):
+        # pre2 = (2 * self.e0) / (1.0 + numpy.exp(self.r * (self.v0 - (x_j[:, 0] - x_j[:, 1]))))
+
+        preFF = self.aF * numpy.squeeze(((2 * self.e0) / (1 + numpy.exp(self.r * x_j[:, 0] - x_j[:, 1])) - self.e0))
+        preFB = self.aB * numpy.squeeze(((2 * self.e0) / (1 + numpy.exp(self.r * x_j[:, 0] - x_j[:, 1])) - self.e0))
+        preL = self.aL * numpy.squeeze(((2 * self.e0) / (1 + numpy.exp(self.r * x_j[:, 0] - x_j[:, 1])) - self.e0))
+        pre = numpy.transpose([preFF, preFB, preL], (1, 0, 2))
+
+        return pre[:,:,:, numpy.newaxis]
+
+    def post(self, gx):
+        return self.a * gx
+
+
+class SigmoidalDavidKiebel2008(Coupling):
+    r"""
+    Provides a sigmoidal coupling function as described in Kiebel 2008; also in Moran 2007
+
+    .. math::
+        c_{min} + (c_{max} - c_{min}) / (1.0 + \exp(-a(x-midpoint)/\sigma))
+
+    """
+
+
+    rho1 = NArray(
+        label=":math:`c_{max}`",
+        default=numpy.array([ 0.0025,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Slope of the sigmoid function",)
+
+    rho2 = NArray(
+        label="midpoint",
+        default=numpy.array([0,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Translation of the sigmoid function",)
+
+
+    a = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Scaling of the coupling term",)
+
+    aF = NArray(
+        label=r":math:`aF`",
+        default=numpy.array([0.1]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: FeedForward
+         """)
+
+    aB = NArray(
+        label=r":math:`aB`",
+        default=numpy.array([0.2]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: FeedBack""")
+
+    aL = NArray(
+        label=r":math:`aL`",
+        default=numpy.array([0.05]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: Lateral""")
+
+    def __str__(self):
+        return simple_gen_astr(self, 'cmin cmax midpoint a r')
+
+    def pre(self, x_i, x_j):
+
+        # S_x = (1 / ( 1 + numpy.exp(-self.rho1 * (x - self.rho2)))) - (1 / (1 + numpy.exp(self.rho1 * self.rho2)))
+
+        preFF = self.aF * numpy.squeeze(((1 / ( 1 + numpy.exp(-self.rho1 * (x_j[:, 0] - x_j[:, 1] - self.rho2)))) - (1 / (1 + numpy.exp(self.rho1 * self.rho2)))))
+        preFB = self.aB * numpy.squeeze(((1 / ( 1 + numpy.exp(-self.rho1 * (x_j[:, 0] - x_j[:, 1] - self.rho2)))) - (1 / (1 + numpy.exp(self.rho1 * self.rho2)))))
+        preL  = self.aL * numpy.squeeze(((1 / ( 1 + numpy.exp(-self.rho1 * (x_j[:, 0] - x_j[:, 1] - self.rho2)))) - (1 / (1 + numpy.exp(self.rho1 * self.rho2)))))
+
+        pre = numpy.transpose([preFF, preFB, preL], (1, 0, 2))
+
+        return pre[:,:,:, numpy.newaxis]
+
+    def post(self, gx):
+        return self.a * gx
+
+
+class SigmoidalCanonicalMicroCircuit(Coupling):
+    r"""
+    Provides a sigmoidal coupling function as described in the
+    Jansen and Rit model, of the following form
+
+    .. math::
+        c_{min} + (c_{max} - c_{min}) / (1.0 + \exp(-a(x-midpoint)/\sigma))
+
+    Assumes that x has have two state variables.
+
+    """
+
+
+    e0 = NArray(
+        label=":math:`c_{max}`",
+        default=numpy.array([ 0.0025,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Maximum of the sigmoid function",)
+
+    v0 = NArray(
+        label="midpoint",
+        default=numpy.array([0,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Midpoint of the linear portion of the sigmoid",)
+
+    r = NArray(
+        label=r":math:`r`",
+        default=numpy.array([1.0,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="the steepness of the sigmoidal transformation",)
+
+    a = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Scaling of the coupling term",)
+
+    aF = NArray(
+        label=r":math:`aF`",
+        default=numpy.array([0.1]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: FeedForward
+         """)
+
+    aB = NArray(
+        label=r":math:`aB`",
+        default=numpy.array([0.2]),
+        domain=Range(lo=0.0, hi=1, step=0.005),
+        doc="""Matrix defining hierarchical connections: FeedBack""")
+
+    # aL = NArray(
+    #     label=r":math:`aL`",
+    #     default=numpy.array([0.05]),
+    #     domain=Range(lo=0.0, hi=1, step=0.005),
+    #     doc="""Matrix defining hierarchical connections: Lateral""")
+
+    def __str__(self):
+        return simple_gen_astr(self, 'cmin cmax midpoint a r')
+
+    def pre(self, x_i, x_j):
+
+        preFF = self.aF * numpy.squeeze(((2 * self.e0) / (1 + numpy.exp(self.r * x_j[:, 0])) - self.e0))
+        preFB = self.aB * numpy.squeeze(((2 * self.e0) / (1 + numpy.exp(self.r * x_j[:, 1])) - self.e0))
+        # preL = self.aL * numpy.squeeze(((2 * self.e0) / (1 + numpy.exp(self.r * x_j[:, 0] - x_j[:, 1])) - self.e0))
+        pre = numpy.transpose([preFF, preFB], (1, 0,2))
+
+        return pre[:,:,:, numpy.newaxis]
+
+    def post(self, gx):
+        return self.a * gx
+
+
+
+class SigmoidalJansenRitDavid2003(Coupling):
     r"""
     Provides a sigmoidal coupling function as described for
     an extension of the Jansen and Rit model in David & Friston 2003
@@ -567,7 +872,7 @@ class SigmoidalJansenRitDavid(Coupling):
         return self.a * gx
 
 
-class SigmoidalJansenRit1995_David2003_cosimulation(Coupling):
+class SigmoidalJansenRitDavid2003_cosimulation(Coupling):
     r"""
     Provides a sigmoidal coupling function as described in the
     Jansen and Rit model, of the following form
@@ -643,6 +948,60 @@ class SigmoidalJansenRit1995_David2003_cosimulation(Coupling):
         return pre
 
 
+
+    def post(self, gx):
+        return self.a * gx
+
+
+
+class SigmoidalWendling(Coupling):
+    r"""
+    Provides a sigmoidal coupling function as described in the
+    Jansen and Rit model, of the following form
+
+    .. math::
+        c_{min} + (c_{max} - c_{min}) / (1.0 + \exp(-a(x-midpoint)/\sigma))
+
+    Assumes that x has have two state variables.
+
+    """
+
+    cmin = NArray(
+        label=":math:`c_{min}`",
+        default=numpy.array([0.0,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Minimum of the sigmoid function",)
+
+    cmax = NArray(
+        label=":math:`c_{max}`",
+        default=numpy.array([2.0 * 0.0025,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Maximum of the sigmoid function",)
+
+    midpoint = NArray(
+        label="midpoint",
+        default=numpy.array([6.0,]),
+        domain=Range(lo=-1000.0, hi=1000.0, step=10.0),
+        doc="Midpoint of the linear portion of the sigmoid",)
+
+    r = NArray(
+        label=r":math:`r`",
+        default=numpy.array([1.0,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="the steepness of the sigmoidal transformation",)
+
+    a = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.56,]),
+        domain=Range(lo=0.01, hi=1000.0, step=10.0),
+        doc="Scaling of the coupling term",)
+
+    def __str__(self):
+        return simple_gen_astr(self, 'cmin cmax midpoint a r')
+
+    def pre(self, x_i, x_j):
+        pre = self.cmax / (1.0 + numpy.exp(self.r * (self.midpoint - (x_j[:, 0] - x_j[:, 1] - x_j[:, 2]))))
+        return pre[:, numpy.newaxis]
 
     def post(self, gx):
         return self.a * gx

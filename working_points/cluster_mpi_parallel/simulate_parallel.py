@@ -84,13 +84,11 @@ def simulate_parallel(params):
                              'Temporal_Pole_Sup_R', 'Temporal_Mid_L', 'Temporal_Mid_R',
                              'Temporal_Pole_Mid_L', 'Temporal_Pole_Mid_R', 'Temporal_Inf_L',
                              'Temporal_Inf_R']
-            cingulum_rois = ['Frontal_Mid_2_L', 'Frontal_Mid_2_R',
-                             'Insula_L', 'Insula_R',
+            cingulum_rois = ['Frontal_Mid_2_L', 'Frontal_Mid_2_R', 'Insula_L', 'Insula_R',
                              'Cingulate_Ant_L', 'Cingulate_Ant_R', 'Cingulate_Post_L', 'Cingulate_Post_R',
-                             'Hippocampus_L', 'Hippocampus_R', 'ParaHippocampal_L',
-                             'ParaHippocampal_R', 'Amygdala_L', 'Amygdala_R',
-                             'Parietal_Sup_L', 'Parietal_Sup_R', 'Parietal_Inf_L',
-                             'Parietal_Inf_R', 'Precuneus_L', 'Precuneus_R',
+                             'Hippocampus_L', 'Hippocampus_R', 'ParaHippocampal_L', 'ParaHippocampal_R',
+                             'Amygdala_L', 'Amygdala_R', 'Parietal_Sup_L', 'Parietal_Sup_R',
+                             'Parietal_Inf_L', 'Parietal_Inf_R', 'Precuneus_L', 'Precuneus_R',
                              'Thalamus_L', 'Thalamus_R']
 
             if "gianluca" not in mode:
